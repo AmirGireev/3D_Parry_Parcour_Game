@@ -1,0 +1,74 @@
+# ===== Unreal Engine 5 (Blueprint project) =====
+
+# Generated folders (never commit)
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# Build output (keep packaging config files if present)
+Build/*
+!Build/*/
+Build/*/**
+!Build/*/PakBlacklist*.txt
+!Build/**/*.ico
+!Build/**/*.icns
+
+# Packaged game builds (put them somewhere else or zip and share)
+Packaged/
+PackagedBuilds/
+Archive/
+*.pak
+*.utoc
+*.ucas
+
+# Plugin build output
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+
+# Visual Studio / Rider / VS Code / Xcode
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+*.xcodeproj
+*.xcworkspace
+*.code-workspace
+*.csproj
+*.user
+
+# Compiled / temp files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+*.dmp
+*.pdb
+*.exp
+*.ilk
+*.lib
+*.obj
+!Content/**/*.obj
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Source-art tool backups
+*.blend1
+*.blend2
+*.psd.tmp
+~$*
+
+# Per-user editor settings
+Config/UserEditorPerProjectUserSettings.ini
+Config/DefaultEditorPerProjectUserSettings.ini.user
