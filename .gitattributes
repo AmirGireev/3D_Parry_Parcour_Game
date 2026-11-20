@@ -4,9 +4,9 @@
 *.uproject text eol=lf
 *.uplugin text eol=lf
 
-# Unreal assets (lockable = use `git lfs lock` so two people never edit the same file)
-*.uasset filter=lfs diff=lfs merge=lfs -text lockable
-*.umap filter=lfs diff=lfs merge=lfs -text lockable
+# Unreal assets (stored in LFS; not lockable, so files stay writable for the editor)
+*.uasset filter=lfs diff=lfs merge=lfs -text
+*.umap filter=lfs diff=lfs merge=lfs -text
 
 # 3D / animation source and export files
 *.fbx filter=lfs diff=lfs merge=lfs -text
