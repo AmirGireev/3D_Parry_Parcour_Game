@@ -26,10 +26,13 @@ Nach jedem erledigten Step trägst du ihn in PROGRESS.md ein.
 - Nach jedem Step: Blueprints kompilieren, speichern, Output Log auf
   Fehler prüfen, den Test des Steps ausführen, soweit möglich. Dann
   PROGRESS.md aktualisieren und committen.
-- Commit-Nachrichten sinnvoll schreiben: eine aussagekräftige Betreffzeile,
-  die sagt, was sich im Spiel ändert (z. B. "Counter-Dash: hinter Gegner
-  und schneller"), plus kurze Stichpunkte zum Wie. Keine nichtssagenden
-  Nachrichten wie Nummern, Kürzel oder "fix".
+- Commit-Nachrichten sinnvoll schreiben: eine kurze, natürliche deutsche
+  Betreffzeile mit echten Umlauten (ä, ö, ü – nie ae/oe/ue), die sagt, was
+  sich im Spiel ändert (z. B. "Gegner-Basisklasse mit Hitbox und Stagger").
+  Nur wenn nötig ein paar kurze Stichpunkte darunter, ohne interne Namen
+  wie Funktions- oder Node-IDs. Keine Nummern, Kürzel oder "fix".
+  Nachricht per Datei mit UTF-8 übergeben (git commit -F), damit Umlaute
+  korrekt ankommen.
 - Antworte kurz: was erledigt ist, was getestet wurde, was ich im Spiel
   selbst prüfen soll.
 - Bei Werten für das Spielgefühl nimm die Startwerte aus dem Guide und
