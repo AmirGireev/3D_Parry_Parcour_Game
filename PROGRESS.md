@@ -9,3 +9,4 @@
 | 10b  | fertig | Dashes getrennt: IA_Dash (Shift) = nur normaler Dash (StartDash, 800 vorwärts, DashSpeed). Counter-Dash = Parry-Taste im Counter-Fenster (IA_Parry Started → CanCounterDash → StartCounterDash, sonst normale Parry-Logik). HandleDashOverlap prüft IsValid (Fehler bei zerstörten Projektilen behoben). |
 | 10c  | fertig | Counter-Dash auf eigene Input Action IA_CounterDash (Linksklick, in IMC_Default); Parry-Taste parriert wieder nur. Normaler Dash kürzer: 500 statt 800. |
 | Fix 1–8 | fertig | Review Steps 1–8: ParryZone standardmäßig No Collision (Preset Custom, Overlap-Antworten unverändert) – vorher automatischer Parry ab Spielstart. Level Blueprint: Todeszone castet jetzt auf BP_PlayerHero vor Open Level. Offen (bewusst nicht geändert): ParryZone/ParryVisual X=0 statt 120, ParryVisual Scale 1 statt 2.2. |
+| 10d  | fertig | Normaler Dash: 1 s Cooldown nach Dash-Ende (DashCooldown = 1.0, bDashOnCooldown). Counter-Dash hat keinen Cooldown. |
