@@ -55,6 +55,12 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Bewegung: Sprung und Dash in Eingaberichtung, Coyote-Time 0,15 s,
   Laufen 900, Jump Z 1000, Gravity 2,8.
 - Gegner-KI: TargetActor wird 0,2 s nach Possess gesetzt.
+- Angriffs-Warnung: Jeder Gegner (BP_EnemyBase, BP_Turret und alle neuen)
+  zeigt 0,5 s vor dem Angriff ein rotes „!“ über dem Kopf (WBP_AttackWarning
+  als Widget-Komponente AttackWarning). PlayTelegraph = dieses Symbol, kein
+  Aufblähen. Neue Gegner müssen das ebenfalls haben.
+- Parry-Kugel (ParryVisual) ist im Spiel unsichtbar (Hidden in Game).
+- Nahkämpfer nutzt ABP_Manny_Combat und AM_ComboAttack aus Variant_Combat.
 
 ## Konventionen
 - Ordner und Namenspräfixe exakt wie in Step 1 (_Game/..., BP_, ABP_,
