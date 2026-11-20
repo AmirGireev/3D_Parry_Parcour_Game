@@ -58,7 +58,12 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Parry: 0,75 s Zeitlupe (Faktor 0,2), Counter-Dash beendet sie sofort.
 - Bewegung: Sprung und Dash in Eingaberichtung, Coyote-Time 0,15 s,
   Laufen 900, Jump Z 1000, Gravity 2,8.
-- Gegner-KI: TargetActor wird 0,2 s nach Possess gesetzt.
+- Gegner-KI: Erkennungsradius statt Dauer-Verfolgung. BP_EnemyBase prüft alle
+  0,25 s (UpdateTarget): Spieler im DetectRadius → TargetActor + Fokus,
+  weiter als 1,5 × Radius → Ziel gelöscht. Nahkämpfer 1500, Fernkämpfer 2200,
+  Turm schießt nur bis 2500. Fernkämpfer weicht unter RetreatDistance (900)
+  zurück und macht nach jedem Schuss einen Seitenschritt. Die KI-Controller
+  starten nur den Behavior Tree.
 - Angriffs-Warnung: Jeder Gegner (BP_EnemyBase, BP_Turret und alle neuen)
   zeigt 0,5 s vor dem Angriff ein rotes „!“ über dem Kopf (WBP_AttackWarning
   als Widget-Komponente AttackWarning). PlayTelegraph = dieses Symbol, kein
