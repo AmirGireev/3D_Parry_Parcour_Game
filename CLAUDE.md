@@ -45,10 +45,14 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   0,75 s Cooldown, kein Schaden. Linksklick (IA_CounterDash) = Counter-Dash,
   nur nach Parry oder in der Ketten-Phase, ohne Cooldown.
 - Markieren: Kontakt (MarkZone am Hero) markiert Gegner mit Tag Enemy, gelber
-  Rand (M_MarkOutline als Overlay). Nach jedem Counter-Dash 3 s keine neue
-  Markierung, während eines Dashs nie.
+  Rand (M_MarkOutline als Overlay). Das Ziel eines Counter-Dashs ist danach
+  1,5 s nicht markierbar (nur dieses Ziel), während eines Dashs nie.
 - Counter-Dash-Schaden: markiert 4, sonst 1 (ersetzt den Guide-Wert 34 und
-  den Bonus-Schaden aus Step 17). Kleine Gegner 3 Leben, Turm 10.
+  den Bonus-Schaden aus Step 17). Kleine Gegner 3 Leben (auch Fernkämpfer,
+  statt Guide-Wert 40), Turm 10.
+- Gegner-Angriff im Behavior Tree: ein gemeinsamer Task (BTT_MeleeAttack)
+  ruft je nach Gegnertyp StartAttack bzw. StartShoot auf. Fernkämpfer
+  schaut per Controller-Fokus immer zum Spieler.
 - Kette: Sind nach einem Counter-Dash noch Gegner markiert, löst Linksklick
   innerhalb von 1 s den nächsten Counter-Dash zum nächsten markierten Gegner aus.
 - Parry: 0,75 s Zeitlupe (Faktor 0,2), Counter-Dash beendet sie sofort.
