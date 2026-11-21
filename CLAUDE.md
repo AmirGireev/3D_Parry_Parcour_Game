@@ -73,7 +73,9 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Parry-Kugel (ParryVisual) ist im Spiel unsichtbar (Hidden in Game).
 - Nahkämpfer nutzt ABP_Manny_Combat und greift zufällig mit Heavy Attack
   (AM_ChargedAttack, 1 Treffer) oder Combo (AM_ComboAttack, 3 Treffer) aus
-  Variant_Combat an. Fernkämpfer schießt zwei Projektile hintereinander.
+  Variant_Combat an. Fernkämpfer schießt zwei Projektile hintereinander auf
+  derselben Bahn (einmal zielen, gleicher Startpunkt), Projektile folgen dem
+  Spieler leicht (Homing 1200) und leben nur 3 s.
 - Combo-Parry: Jeder Angriff hat eine Trefferzahl (Combo 3, Heavy 1,
   Fernkämpfer-Salve 2, Turm 1). Jeder geparierte Treffer blockt nur; erst der
   letzte geparierte Treffer löst Zeitlupe, Counter-Fenster und Stagger aus.
@@ -85,6 +87,7 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   Dash-Animation und ohne FOV-Änderung.
 - Lock-On (Universal Lock-On, mittlere Maustaste): nur die Kamera folgt dem
   Ziel (auf spine_04), die Figur dreht sich weiter in Laufrichtung.
+  Deadzone 600 / Falloff 600, Kamera-Folgegeschwindigkeit 6.
 - Controller: X/A = Springen, L1 = Parry, R1 = Dash, R2 = Counter-Dash.
 - Kamera: Arm 550, Socket-Offset Z 150, Kamera 10° nach unten geneigt, kein
   Camera Lag.
