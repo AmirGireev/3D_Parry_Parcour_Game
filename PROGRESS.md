@@ -1,5 +1,13 @@
 # Fortschritt
 
+## Erste Arena nach den freigegebenen Stilreferenzen
+
+- Neuer Level `L_MossboundArena`: runder Hof mit 20 m Durchmesser und 14 m freier Kampffläche, nördliches Tor, westlicher Balkon auf 2 m mit Treppe, östlicher Holzweg auf Hofhöhe, südöstliche Steinbrücke und kahler Baum im Südwesten. Der bisherige Fort-Testlevel bleibt erhalten.
+- Einfache, weiche Steinformen und matte Materialien setzen die Richtung „Cute/Minimal + Dark Fantasy/Melancholie“ um. Vier lokale Nebelvolumen, volumetrischer Höhennebel und kühles Licht am Tor erzeugen die Atmosphäre. Drei Referenzkameras sind im Level gespeichert.
+- Umgebung als normale Unreal-Actors, statische Meshes und Material-Nodes gespeichert; keine neuen C++-Klassen oder externen Laufzeitskripte. Python dient nur dem optionalen Aufbau und der Prüfung. Neue Spiellogik soll mit einfachen Blueprint-Nodes entstehen. Der vorhandene C++-Kampfadapter wurde hier nicht in Blueprint umgebaut.
+- Geprüft: Boden bis 6,99 m Radius, freie Toröffnung, Balkonhöhe, ebener Ostweg, Brückenoberfläche und alle zwölf Treppenhöhen. In PIE: vorhandener Held und Ritter korrekt geladen, Held steht auf dem Boden, Kampfadapter startet. Material-Verbindungen korrigiert; abschließender Spielstart ohne neue Material-Kompilierfehler. Prüfzusammenfassung in `Tools/CombatTest/arena-validation.json`.
+- Erster Art-Pass: Baum, Felsen, Begrünung und genauere Übereinstimmung mit der Illustration benötigen weitere Politur. Bewegung, Kamera und Sprünge bitte selbst im neuen Level testen. Kurze Erklärung für die Präsentation: `docs/mossbound-arena.txt`.
+
 ## Kampfprototyp im Fort
 
 ### Nachbesserung: Todes-Respawn und sichtbarer Konterschaden

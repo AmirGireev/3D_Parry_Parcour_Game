@@ -1,0 +1,20 @@
+MOSSBOUND ARENA — V2 ART DIRECTION
+
+Requested direction: Cute/Minimal contrasted with Dark Fantasy / Melancholie.
+Appearance reference: mossbound-arena-v2-melancholy.png
+Multi-view appearance reference: mossbound-arena-v2-reference-sheet.png
+Geometry authority remains mossbound-arena-plan-v1.svg and mossbound-arena-reference-spec.txt.
+
+Use large softly bevelled architectural masses, broad matte stone surfaces,
+few floor seams, simple timber construction and sparse broad moss patches.
+Reduce tiny bricks, ornamental detail, texture noise and dense foliage.
+Palette: charcoal, slate blue, fog grey, desaturated sage, muted burgundy.
+Small amber eyes and the hero's rusty red scarf provide emotional warmth.
+Preserve the existing cute moss hero and solemn bronze knight identities.
+Atmosphere: pale overcast light, bare branches, layered ravine mist, quiet loss.
+Keep combat floor and silhouettes clearly readable in the cool lighting.
+
+The illustrated overhead is an elevated appearance view, not a measured plan.
+The sheet's east path looks raised; build it at Z=0 per measured specification.
+Illustrations do not supersede dimension targets or traversal requirements.
+This revision changes visual references only; no Unreal level has been modified.

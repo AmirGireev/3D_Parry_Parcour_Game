@@ -1,0 +1,46 @@
+MOSSBOUND ARENA — FIRST UNREAL ART PASS
+
+Open /Game/_Game/Levels/L_MossboundArena and press Play.
+
+EXPLAINING THE ARENA
+1. Geometry: a circular 20 m court with 14 m of clear fighting space.
+   The north gate, west balcony and stairs, east path and southeast bridge
+   are ordinary static meshes, grouped by landmark in the World Outliner.
+2. Materials: simple matte colours for slate, floor, timber, moss and cloth.
+   Colour and roughness are visible in Unreal's Material Editor nodes.
+3. Lighting: one directional light, one skylight, a sky dome, height fog
+   and a post-process volume create the cool, melancholic atmosphere.
+   Four built-in Local Fog Volumes add mist at the ravine and north gate.
+   A cool spotlight gives the gate a restrained volumetric light shaft.
+4. Collision: the court, bridge, landing, stairs, balcony and walls block
+   movement. Decorative moss, banners and distant scenery do not.
+
+The arena environment requires no external runtime code, Python or procedural
+generation during play. Everything is saved as Unreal assets and level actors.
+Scripts in Tools/CombatTest are offline authoring/verification utilities.
+New gameplay behavior should use small, clearly named Blueprint graphs.
+
+EXISTING COMBAT
+This map reuses BP_HeroGameMode, BP_PlayerHero, BP_EnemyBase and the imported
+hero/knight meshes. The earlier SwordCombatTest C++ actor still drives the
+combat prototype; it has not been converted to Blueprint by this arena task.
+The environment has no new C++ classes or custom runtime code.
+
+EDITING
+Content Browser: /Game/_Game/Art/MossboundArena
+Outliner folders: Arena/Architecture, Dressing, Lighting, Surroundings,
+Combat, Scale previews and Reference cameras.
+Atmosphere objects are grouped in Arena/Atmosphere. Select a mist volume
+and change Radial Fog Density or Height Fog Density in Details to tune it.
+Three reference cameras provide south, overhead and reverse viewpoints.
+Editor-only scale previews and reference cameras do not appear during Play.
+Press G in the viewport to show/hide editor overlays and scale previews.
+
+This is a first art pass. Foliage, cliff silhouettes, tree modelling, atmosphere
+and exact visual matching can be refined after reviewing it in the game camera.
+The former /Game/_Game/Levels/L_MossboundFort map is preserved.
+
+AUTHORING ONLY
+If regenerating from source: build_arena_meshes.py runs in Blender;
+build_arena_level.py then refine_arena.py run in Unreal Python.
+These are optional rebuild utilities, never part of gameplay.

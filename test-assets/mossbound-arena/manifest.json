@@ -1,0 +1,209 @@
+{
+  "version": 2,
+  "units": "centimetres",
+  "north": "+X",
+  "east": "+Y",
+  "court_diameter_cm": 2000,
+  "clear_combat_diameter_cm": 1400,
+  "groups": [
+    {
+      "name": "Court",
+      "mesh": "SM_MB_Court",
+      "collision": true,
+      "vertices": 5576,
+      "material_slots": [
+        "Slate",
+        "Floor",
+        "FloorAlt"
+      ]
+    },
+    {
+      "name": "Foundation",
+      "mesh": "SM_MB_Foundation",
+      "collision": true,
+      "vertices": 3200,
+      "material_slots": [
+        "Slate"
+      ]
+    },
+    {
+      "name": "NorthGate",
+      "mesh": "SM_MB_NorthGate",
+      "collision": true,
+      "vertices": 3072,
+      "material_slots": [
+        "Slate",
+        "StoneEdge",
+        "Iron"
+      ]
+    },
+    {
+      "name": "Banners",
+      "mesh": "SM_MB_Banners",
+      "collision": false,
+      "vertices": 20,
+      "material_slots": [
+        "Burgundy"
+      ]
+    },
+    {
+      "name": "WestBalcony",
+      "mesh": "SM_MB_WestBalcony",
+      "collision": true,
+      "vertices": 13480,
+      "material_slots": [
+        "WoodEdge",
+        "Wood",
+        "Burgundy"
+      ]
+    },
+    {
+      "name": "WestStairs",
+      "mesh": "SM_MB_WestStairs",
+      "collision": true,
+      "vertices": 2208,
+      "material_slots": [
+        "WoodEdge",
+        "Wood"
+      ]
+    },
+    {
+      "name": "EastWalkway",
+      "mesh": "SM_MB_EastWalkway",
+      "collision": true,
+      "vertices": 6144,
+      "material_slots": [
+        "WoodEdge",
+        "Wood"
+      ]
+    },
+    {
+      "name": "RuinedArcades",
+      "mesh": "SM_MB_RuinedArcades",
+      "collision": true,
+      "vertices": 7488,
+      "material_slots": [
+        "Slate",
+        "StoneEdge"
+      ]
+    },
+    {
+      "name": "Bridge",
+      "mesh": "SM_MB_Bridge",
+      "collision": true,
+      "vertices": 3648,
+      "material_slots": [
+        "FloorAlt",
+        "StoneEdge",
+        "Slate"
+      ]
+    },
+    {
+      "name": "SouthwestTree",
+      "mesh": "SM_MB_SouthwestTree",
+      "collision": false,
+      "vertices": 1700,
+      "material_slots": [
+        "Bark",
+        "Slate",
+        "StoneEdge"
+      ]
+    },
+    {
+      "name": "Moss",
+      "mesh": "SM_MB_Moss",
+      "collision": false,
+      "vertices": 2948,
+      "material_slots": [
+        "Moss"
+      ]
+    },
+    {
+      "name": "Ravine",
+      "mesh": "SM_MB_Ravine",
+      "collision": false,
+      "vertices": 2132,
+      "material_slots": [
+        "Cliff",
+        "Bark"
+      ]
+    },
+    {
+      "name": "BridgeLanding",
+      "mesh": "SM_MB_BridgeLanding",
+      "collision": true,
+      "vertices": 96,
+      "material_slots": [
+        "Cliff"
+      ]
+    }
+  ],
+  "materials": {
+    "Slate": [
+      0.115,
+      0.151,
+      0.17,
+      1
+    ],
+    "StoneEdge": [
+      0.18,
+      0.215,
+      0.225,
+      1
+    ],
+    "Floor": [
+      0.16,
+      0.19,
+      0.215,
+      1
+    ],
+    "FloorAlt": [
+      0.145,
+      0.17,
+      0.19,
+      1
+    ],
+    "Wood": [
+      0.105,
+      0.078,
+      0.065,
+      1
+    ],
+    "WoodEdge": [
+      0.17,
+      0.125,
+      0.09,
+      1
+    ],
+    "Moss": [
+      0.18,
+      0.225,
+      0.105,
+      1
+    ],
+    "Burgundy": [
+      0.155,
+      0.035,
+      0.045,
+      1
+    ],
+    "Iron": [
+      0.045,
+      0.055,
+      0.062,
+      1
+    ],
+    "Bark": [
+      0.095,
+      0.083,
+      0.075,
+      1
+    ],
+    "Cliff": [
+      0.09,
+      0.125,
+      0.14,
+      1
+    ]
+  }
+}
