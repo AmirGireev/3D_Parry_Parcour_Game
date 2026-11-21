@@ -1,6 +1,8 @@
 # ===== Unreal Engine 5 (Blueprint project) =====
 
 # Generated folders (never commit)
+__pycache__/
+*.py[cod]
 Binaries/
 DerivedDataCache/
 Intermediate/

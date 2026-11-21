@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-21",
+  "level": "/Game/_Game/Levels/L_MossboundFort",
+  "build": "Parry_Parcour_GameEditor Win64 Development: Succeeded",
+  "reference_heights_cm": {"hero": 100, "boss": 300},
+  "geometry_checks": {"crossing": "PASS", "separated": "PASS", "grazing": "PASS"},
+  "live_pie": {
+    "blade_parries_observed": 13,
+    "body_hits_observed": true,
+    "counter_ready_after_blade_parry": true,
+    "dash_target": "BP_EnemyBase boss",
+    "counter_dash_duration_seconds": 0.071875,
+    "counter_dash_distance_cm": 595.7876,
+    "counter_dash_ended": true,
+    "ledge_reset_map": "L_MossboundFort",
+    "hero_mesh_after_reset": "SK_Hero",
+    "parry_sound_durations_seconds": [1, 1, 1, 1]
+  },
+  "limitations": [
+    "Environment and animations are prototype assets requiring further polish.",
+    "Counter-dash verification invoked the existing StartCounterDash, GetDashDuration and EndDash functions with their normal timing; manual input feel still needs user review.",
+    "Existing GameFeatureData startup configuration warning remains outside this test's scope."
+  ]
+}
