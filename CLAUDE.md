@@ -71,9 +71,23 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   als Widget-Komponente AttackWarning). PlayTelegraph = dieses Symbol, kein
   Aufblähen. Neue Gegner müssen das ebenfalls haben.
 - Parry-Kugel (ParryVisual) ist im Spiel unsichtbar (Hidden in Game).
-- Nahkämpfer nutzt ABP_Manny_Combat und AM_ComboAttack aus Variant_Combat.
+- Nahkämpfer nutzt ABP_Manny_Combat und greift zufällig mit Heavy Attack
+  (AM_ChargedAttack, 1 Treffer) oder Combo (AM_ComboAttack, 3 Treffer) aus
+  Variant_Combat an. Fernkämpfer schießt zwei Projektile hintereinander.
+- Combo-Parry: Jeder Angriff hat eine Trefferzahl (Combo 3, Heavy 1,
+  Fernkämpfer-Salve 2, Turm 1). Jeder geparierte Treffer blockt nur; erst der
+  letzte geparierte Treffer löst Zeitlupe, Counter-Fenster und Stagger aus.
+  Trifft ein Teil der Combo den Spieler, gibt es für diesen Angriff keinen
+  Counter.
+- Spielfigur: Paragon Gideon (Scale 0,85, kleiner als die Gegner) mit seinem
+  eigenen Animation Blueprint, Portal-Ring und Start-Animation ausgeblendet.
+- Dash bewegt die Figur im Flying-Modus (keine Sprung-/Landeanimation), ohne
+  Dash-Animation und ohne FOV-Änderung.
+- Lock-On (Universal Lock-On, mittlere Maustaste): nur die Kamera folgt dem
+  Ziel (auf spine_04), die Figur dreht sich weiter in Laufrichtung.
 - Controller: X/A = Springen, L1 = Parry, R1 = Dash, R2 = Counter-Dash.
-- Kamera: Arm 550, Socket-Offset Z 150, Kamera 10° nach unten geneigt.
+- Kamera: Arm 550, Socket-Offset Z 150, Kamera 10° nach unten geneigt, kein
+  Camera Lag.
 
 ## Konventionen
 - Ordner und Namenspräfixe exakt wie in Step 1 (_Game/..., BP_, ABP_,
