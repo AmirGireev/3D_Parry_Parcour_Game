@@ -59,7 +59,11 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Counter-Dash fliegt in 3D auf die Mitte der Kollisions-Bounds des Ziels
   (auch nach oben/unten) und 400 darüber hinaus.
 - Bewegung: Sprung und Dash in Eingaberichtung, Coyote-Time 0,15 s,
-  Laufen 900, Jump Z 1000, Gravity 2,8.
+  Laufen 900, Jump Z 1000, Gravity 2,8. Nach dem Dash bleibt Schwung
+  (80 % der Dash-Geschwindigkeit, max. +700 über Laufen) und baut sich weich
+  ab; Springen im/direkt nach dem Dash bricht ihn ab und behält den Schwung
+  in der Luft (Weitsprung). Am Sprunghöhepunkt (|Vz| < 250) Schwerkraft ×0,55,
+  beim Fallen ×1,15. Sprung-Puffer 0,12 s vor der Landung.
 - Gegner-KI: Erkennungsradius statt Dauer-Verfolgung. BP_EnemyBase prüft alle
   0,25 s (UpdateTarget): Spieler im DetectRadius → TargetActor + Fokus,
   weiter als 1,5 × Radius → Ziel gelöscht. Nahkämpfer 1500, Fernkämpfer 2200,
