@@ -17,6 +17,17 @@
 
 namespace CombatTest
 {
+float Health(ACharacter* Character, FName Field)
+{
+    if (Character) for (UActorComponent* C : Character->GetComponents())
+        if (C->GetClass()->GetName().Contains(TEXT("AC_Health")))
+            if (auto* P=FindFProperty<FNumericProperty>(C->GetClass(),Field))
+            {
+                const void* Value=P->ContainerPtrToValuePtr<void>(C);
+                return P->IsFloatingPoint()?float(P->GetFloatingPointPropertyValue(Value)):float(P->GetSignedIntPropertyValue(Value));
+            }
+    return 0.f;
+}
 bool Bool(UObject* O, FName N)
 {
     if (O) if (auto* P=FindFProperty<FBoolProperty>(O->GetClass(),N)) return P->GetPropertyValue_InContainer(O);
@@ -125,6 +136,7 @@ void ASwordCombatTest::InitializeFighters()
     if (auto* P=FindFProperty<FObjectProperty>(Boss->GetClass(),TEXT("StaggerMontage"))) P->SetObjectPropertyValue_InContainer(Boss,nullptr);
     Animate(Hero,HeroClips[0],true);
     Animate(Boss,BossClips[0],true);
+    LastBossHealth=CombatTest::Health(Boss,TEXT("Health"));
     bInitialized=true;
     UE_LOG(LogTemp,Display,TEXT("SwordCombatTest ready: hero 100cm, boss 300cm; exact 3:1 reference mesh height. Blueprint player preserved."));
 }
@@ -138,6 +150,13 @@ void ASwordCombatTest::Tick(float Delta)
     Clock+=Delta;
     if (!bInitialized) { InitializeFighters(); return; }
     if (!IsValid(Hero) || !IsValid(Boss)) { DrawHUD(); return; }
+    const float BossHealth=CombatTest::Health(Boss,TEXT("Health"));
+    if (LastBossHealth>=0.f && BossHealth<LastBossHealth)
+    {
+        Feedback=FString::Printf(TEXT("COUNTER-DASH HIT: %.0f damage"),LastBossHealth-BossHealth);
+        UE_LOG(LogTemp,Display,TEXT("SwordCombatTest COUNTER_DAMAGE %.0f; boss HP %.0f"),LastBossHealth-BossHealth,BossHealth);
+    }
+    LastBossHealth=BossHealth;
     if (CombatTest::Bool(Boss,TEXT("bIsDead"))) { Feedback=TEXT("BOSS DEFEATED - R to restart the test"); DrawHUD(); return; }
     auto* PC=UGameplayStatics::GetPlayerController(this,0);
     if (!PC) return;
@@ -245,7 +264,7 @@ void ASwordCombatTest::ResolveBladeContact(bool Active,bool Guard)
             {
                 ++BodyHitCount; bSwingResolved=true;
                 UGameplayStatics::ApplyDamage(Hero,1.f,Boss->GetController(),Boss,nullptr);
-                Feedback=TEXT("BODY HIT - blade reached capsule outside parry window");
+                Feedback=TEXT("BODY HIT - no successful blade parry");
                 if (ClashSounds.Num() && ClashSounds[0]) UGameplayStatics::PlaySoundAtLocation(this,ClashSounds[FMath::RandRange(0,ClashSounds.Num()-1)],Point,.45f);
                 UE_LOG(LogTemp,Display,TEXT("SwordCombatTest BODY_HIT %d"),BodyHitCount);
                 break;
@@ -282,6 +301,7 @@ void ASwordCombatTest::DrawHUD()
     GEngine->AddOnScreenDebugMessage(7102,0.f,FColor::White,TEXT("WASD move | Space double jump | RMB parry | Shift dash | LMB counter-dash | R reset"));
     GEngine->AddOnScreenDebugMessage(7103,0.f,FColor::White,FString::Printf(TEXT("F1 blade traces | F2 auto guard: %s | Blade contacts %d | Body hits %d"),bAutoParry?TEXT("ON"):TEXT("OFF"),ParryCount,BodyHitCount));
     GEngine->AddOnScreenDebugMessage(7104,0.f,FColor::Cyan,Feedback);
+    if (IsValid(Boss)) GEngine->AddOnScreenDebugMessage(7105,0.f,FColor(255,200,110),FString::Printf(TEXT("Boss HP: %.0f / %.0f | Parry, then LEFT CLICK to dash through and deal damage"),CombatTest::Health(Boss,TEXT("Health")),CombatTest::Health(Boss,TEXT("MaxHealth"))));
 }
 FString ASwordCombatTest::RunBladeContactChecks()
 {

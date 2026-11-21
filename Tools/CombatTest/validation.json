@@ -5,6 +5,15 @@
   "reference_heights_cm": {"hero": 100, "boss": 300},
   "geometry_checks": {"crossing": "PASS", "separated": "PASS", "grazing": "PASS"},
   "live_pie": {
+    "counter_input_action": "IA_CounterDash (Enhanced Input injection)",
+    "counter_input_boss_hp_before": 100,
+    "counter_input_boss_hp_after": 99,
+    "counter_input_damage": 1,
+    "counter_input_distance_cm": 686.4539,
+    "counter_input_dash_ended": true,
+    "forced_death_damage": 2000,
+    "death_respawn_map": "L_MossboundFort",
+    "death_respawn_mesh": "SK_Hero",
     "blade_parries_observed": 13,
     "body_hits_observed": true,
     "counter_ready_after_blade_parry": true,
@@ -18,7 +27,7 @@
   },
   "limitations": [
     "Environment and animations are prototype assets requiring further polish.",
-    "Counter-dash verification invoked the existing StartCounterDash, GetDashDuration and EndDash functions with their normal timing; manual input feel still needs user review.",
+    "Counter-dash damage was additionally verified through Enhanced Input; manual input feel still needs user review.",
     "Existing GameFeatureData startup configuration warning remains outside this test's scope."
   ]
 }

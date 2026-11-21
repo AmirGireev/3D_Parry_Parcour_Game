@@ -42,6 +42,7 @@ private:
     UPROPERTY(Transient) TObjectPtr<USkeletalMesh> BossMesh;
     float Clock = 0.f, NextAttack = 2.f, AttackTime = -1.f, HeroPoseUntil = 0.f;
     float StaggerUntil = 0.f, HeroAttackUntil = 0.f;
+    float LastBossHealth = -1.f;
     int32 AttackIndex = 0;
     bool bInitialized = false, bSwingResolved = false, bWasParrying = false;
     bool bHavePrevious = false, bCastSpawned = false, bClashPlayed = false;

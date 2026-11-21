@@ -21,9 +21,11 @@ F2: diagnostic automatic guard (swords only; does not auto-parry projectiles)
 Select 'Sword combat test - select to tune traces' in the Outliner.
 Combat test properties expose blade radius, attack interval, approach distance,
 normalized active start/end frames and the hero's guard direction in mesh space.
-Training Mode supplies 1000 player health so repeated hits do not trigger the
-original player's hard-coded parkour death travel. Body-hit counters still work.
-The original player and enemy Blueprint assets are not modified.
+Training Mode supplies 1000 player health for repeated hit tests. Body-hit
+counters still work. The player death handler now reloads the current level,
+so a death in this fort keeps the fort and its characters. Existing movement,
+parry, marking and counter-dash mechanics are preserved.
+Boss HP and confirmed counter-dash damage are displayed during the test.
 
 Collision rules:
 During active melee frames, the test samples blade capsules between frames.
