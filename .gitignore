@@ -72,3 +72,5 @@ ehthumbs.db
 # Per-user editor settings
 Config/UserEditorPerProjectUserSettings.ini
 Config/DefaultEditorPerProjectUserSettings.ini.user
+# Großes Fab-Paket, nur lokal (nicht ins Git)
+Content/ParagonSparrow/
