@@ -89,7 +89,8 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   nur markiert (Anzeige auf spine_04) und ist Ziel des Counter-Dashs; Kamera
   und Figur bleiben frei (allowTracking aus, Kamera-Steuerung Freecam, Figur
   dreht in Laufrichtung). Beim Anvisieren dreht die Kamera einmal zum Ziel
-  (nur Yaw), danach ist sie wieder frei.
+  (nur Yaw), danach ist sie wieder frei. Dreht die Kamera mehr als 40° vom
+  Ziel weg (LockViewAngle), löst sich das Lock-On und man kann neu anvisieren.
 - Controller: X/A = Springen, L1 = Parry, R1 = Dash, R2 = Counter-Dash.
 - Kamera: Arm 550, Socket-Offset Z 150, Kamera 10° nach unten geneigt, kein
   Camera Lag.
