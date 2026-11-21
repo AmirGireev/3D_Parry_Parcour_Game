@@ -85,9 +85,9 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   eigenen Animation Blueprint, Portal-Ring und Start-Animation ausgeblendet.
 - Dash bewegt die Figur im Flying-Modus (keine Sprung-/Landeanimation), ohne
   Dash-Animation und ohne FOV-Änderung.
-- Lock-On (Universal Lock-On, mittlere Maustaste): nur die Kamera folgt dem
-  Ziel (auf spine_04), die Figur dreht sich weiter in Laufrichtung.
-  Deadzone 600 / Falloff 600, Kamera-Folgegeschwindigkeit 6.
+- Lock-On (Universal Lock-On, mittlere Maustaste) als Soft Lock: Ziel wird
+  nur markiert (Anzeige auf spine_04) und ist Ziel des Counter-Dashs; Kamera
+  und Figur bleiben frei (allowTracking aus, Figur dreht in Laufrichtung).
 - Controller: X/A = Springen, L1 = Parry, R1 = Dash, R2 = Counter-Dash.
 - Kamera: Arm 550, Socket-Offset Z 150, Kamera 10° nach unten geneigt, kein
   Camera Lag.
