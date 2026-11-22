@@ -166,6 +166,87 @@ static void InPlace(const TArray<FString>& Args)
     UE_LOG(LogTemp, Display, TEXT("ParryAnim INPLACE %s drift=(%.4f, %.4f) ok=%d"), *Seq->GetName(), Drift.X, Drift.Y, bOk ? 1 : 0);
 }
 
+// Reference pose of a bone in component space.
+static FTransform RefComponentTransform(const FReferenceSkeleton& Ref, int32 Bone)
+{
+    FTransform Result = FTransform::Identity;
+    while (Bone != INDEX_NONE) { Result = Result * Ref.GetRefBonePose()[Bone]; Bone = Ref.GetParentIndex(Bone); }
+    return Result;
+}
+
+// Parry.Retarget <SourceAnim> <TargetAnim>: copies the motion of a UE-mannequin-named clip (pelvis, spine_01,
+// upperarm_l ...) onto a clip of a Mixamo skeleton (Hips, Spine, LeftArm ...). Rotations are transferred as
+// component-space deltas from each skeleton's reference pose; the target clip gets the source's length.
+static void Retarget(const TArray<FString>& Args)
+{
+    if (Args.Num() < 2) { UE_LOG(LogTemp, Error, TEXT("ParryAnim: Parry.Retarget <SourceAnim> <TargetAnim>")); return; }
+    UAnimSequence* Src = LoadAnim(Args[0]);
+    UAnimSequence* Dst = LoadAnim(Args[1]);
+    if (!Src || !Dst || !Src->GetSkeleton() || !Dst->GetSkeleton()) return;
+    static const TCHAR* Map[][2] = {
+        {TEXT("pelvis"), TEXT("Hips")}, {TEXT("spine_01"), TEXT("Spine")}, {TEXT("spine_02"), TEXT("Spine1")}, {TEXT("spine_03"), TEXT("Spine2")},
+        {TEXT("neck_01"), TEXT("Neck")}, {TEXT("head"), TEXT("Head")},
+        {TEXT("clavicle_l"), TEXT("LeftShoulder")}, {TEXT("upperarm_l"), TEXT("LeftArm")}, {TEXT("lowerarm_l"), TEXT("LeftForeArm")}, {TEXT("hand_l"), TEXT("LeftHand")},
+        {TEXT("clavicle_r"), TEXT("RightShoulder")}, {TEXT("upperarm_r"), TEXT("RightArm")}, {TEXT("lowerarm_r"), TEXT("RightForeArm")}, {TEXT("hand_r"), TEXT("RightHand")},
+        {TEXT("thigh_l"), TEXT("LeftUpLeg")}, {TEXT("calf_l"), TEXT("LeftLeg")}, {TEXT("foot_l"), TEXT("LeftFoot")}, {TEXT("ball_l"), TEXT("LeftToeBase")},
+        {TEXT("thigh_r"), TEXT("RightUpLeg")}, {TEXT("calf_r"), TEXT("RightLeg")}, {TEXT("foot_r"), TEXT("RightFoot")}, {TEXT("ball_r"), TEXT("RightToeBase")}};
+    const IAnimationDataModel* SM = Src->GetDataModel();
+    const FReferenceSkeleton& SR = Src->GetSkeleton()->GetReferenceSkeleton();
+    const FReferenceSkeleton& DR = Dst->GetSkeleton()->GetReferenceSkeleton();
+    TMap<int32, int32> DstToSrc;
+    for (const auto& Pair : Map)
+    {
+        const int32 S = SR.FindBoneIndex(Pair[0]), D = DR.FindBoneIndex(Pair[1]);
+        if (S != INDEX_NONE && D != INDEX_NONE) DstToSrc.Add(D, S);
+    }
+    const int32 Keys = SM->GetNumberOfKeys();
+    const int32 NumDst = DR.GetNum();
+    TArray<FTransform> DstRefCS; DstRefCS.SetNum(NumDst);
+    for (int32 B = 0; B < NumDst; ++B) DstRefCS[B] = RefComponentTransform(DR, B);
+    // Per bone key arrays for the target.
+    TArray<TArray<FVector>> Pos; TArray<TArray<FQuat>> Rot; TArray<TArray<FVector>> Scl;
+    Pos.SetNum(NumDst); Rot.SetNum(NumDst); Scl.SetNum(NumDst);
+    for (int32 K = 0; K < Keys; ++K)
+    {
+        const FFrameNumber N(K);
+        TArray<FTransform> DstCS; DstCS.SetNum(NumDst);
+        for (int32 B = 0; B < NumDst; ++B) // parents come before children in a reference skeleton
+        {
+            const int32 Parent = DR.GetParentIndex(B);
+            const FTransform ParentCS = Parent != INDEX_NONE ? DstCS[Parent] : FTransform::Identity;
+            FTransform Local = DR.GetRefBonePose()[B];
+            if (const int32* S = DstToSrc.Find(B))
+            {
+                const FTransform SrcCS = ComponentTransform(SM, SR, *S, N);
+                const FTransform SrcRefCS = RefComponentTransform(SR, *S);
+                const FQuat Delta = SrcCS.GetRotation() * SrcRefCS.GetRotation().Inverse();
+                FTransform CS(Delta * DstRefCS[B].GetRotation(), (ParentCS.TransformPosition(Local.GetLocation())), FVector::OneVector);
+                if (Parent == INDEX_NONE || !DstToSrc.Contains(Parent)) // root of the mapped chain: carry the pelvis offset
+                    CS.SetLocation(DstRefCS[B].GetLocation() + (SrcCS.GetLocation() - SrcRefCS.GetLocation()));
+                Local = CS.GetRelativeTransform(ParentCS);
+                Local.SetScale3D(DR.GetRefBonePose()[B].GetScale3D());
+            }
+            DstCS[B] = Local * ParentCS;
+            Pos[B].Add(Local.GetLocation()); Rot[B].Add(Local.GetRotation()); Scl[B].Add(Local.GetScale3D());
+        }
+    }
+    IAnimationDataController& C = Dst->GetController();
+    C.OpenBracket(FText::FromString(TEXT("Retarget")));
+    C.SetFrameRate(SM->GetFrameRate());
+    C.SetNumberOfFrames(FFrameNumber(SM->GetNumberOfFrames()));
+    int32 Written = 0;
+    for (int32 B = 0; B < NumDst; ++B)
+    {
+        const FName Name = DR.GetBoneName(B);
+        if (!Dst->GetDataModel()->IsValidBoneTrackName(Name)) C.AddBoneCurve(Name);
+        if (C.SetBoneTrackKeys(Name, Pos[B], Rot[B], Scl[B])) ++Written;
+    }
+    C.CloseBracket();
+    Dst->MarkPackageDirty();
+    UE_LOG(LogTemp, Display, TEXT("ParryAnim RETARGET %s -> %s keys=%d mapped=%d tracks=%d length=%.3f"), *Src->GetName(), *Dst->GetName(), Keys, DstToSrc.Num(), Written, Dst->GetPlayLength());
+}
+
+static FAutoConsoleCommand RetargetCmd(TEXT("Parry.Retarget"), TEXT("Copies a UE-mannequin clip onto a Mixamo-skeleton clip."), FConsoleCommandWithArgsDelegate::CreateStatic(&Retarget));
 static FAutoConsoleCommand InPlaceCmd(TEXT("Parry.InPlace"), TEXT("Removes baked forward travel of the pelvis."), FConsoleCommandWithArgsDelegate::CreateStatic(&InPlace));
 static FAutoConsoleCommand ClampCmd(TEXT("Parry.ClampPelvis"), TEXT("Pelvis never higher than MaxZ (removes baked jump height)."), FConsoleCommandWithArgsDelegate::CreateStatic(&ClampPelvis));
 static FAutoConsoleCommand InfoCmd(TEXT("Parry.AnimInfo"), TEXT("Logs pelvis/foot height per frame of an animation."), FConsoleCommandWithArgsDelegate::CreateStatic(&AnimInfo));
