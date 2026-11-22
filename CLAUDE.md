@@ -94,7 +94,12 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   Fernkämpfer-Salve 2, Turm 1). Jeder geparierte Treffer blockt nur; erst der
   letzte geparierte Treffer löst Zeitlupe, Counter-Fenster und Stagger aus.
   Trifft ein Teil der Combo den Spieler, gibt es für diesen Angriff keinen
-  Counter.
+  Counter. Teil-Parry = grüne Funken (NS_ParrySpark_Green), letzter Parry =
+  rote Funken (NS_ParrySpark_Red).
+- Nahkämpfer blitzt 0,1 s vor jedem Treffer rot auf (FlashRed in BP_EnemyBase,
+  Overlay M_HitFlash 0,15 s, vorheriges Overlay wie die Markierung bleibt
+  erhalten). In StartAttack steht vor jedem HitboxOn: Delay (alt − 0,1) →
+  FlashRed → Delay 0,1.
 - Spielfigur: Paragon Gideon (Scale 0,85, kleiner als die Gegner) mit seinem
   eigenen Animation Blueprint, Portal-Ring und Start-Animation ausgeblendet.
 - Dash bewegt die Figur im Flying-Modus (keine Sprung-/Landeanimation), ohne
