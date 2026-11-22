@@ -52,8 +52,9 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Ausweich-Ladungen: Wer in der Nahkampf-Hitbox stand und sie in den letzten
   0,4 s vor dem Treffer verlässt (Dash oder Laufen), bekommt einen Ausweicher
   (BP_EnemyBase prüft beim Einschalten der Hitbox, DodgeWindow 0,4).
-  2 Ausweicher = 1 Ladung, max. 2 Ladungen. Anzeige: gelbe Vierecke rechts
-  neben der Lebensanzeige, halb transparent = 1 Ausweicher Fortschritt.
+  2 Ausweicher = 1 Ladung, max. 2 Ladungen. Anzeige: blaue Vierecke unter
+  der Lebensanzeige, halb transparent = 1 Ausweicher Fortschritt.
+- Ein Counter-Dash durch einen markierten Gegner heilt 1 Leben (bis max.).
 - Counter-Dash-Schaden: markiert 2, sonst 1 (ersetzt den Guide-Wert 34 und
   den Bonus-Schaden aus Step 17). Kleine Gegner 3 Leben (auch Fernkämpfer,
   statt Guide-Wert 40), Turm 10. Spieler 5 Leben, jeder gegnerische Treffer 1.
