@@ -68,7 +68,7 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     }
     else if (bFalling)
     {
-        if (bFlipping) PlayClip(Clips[DoubleJump], false, DoubleJumpRate, bStartDoubleJump);
+        if (bFlipping) PlayClip(Clips[DoubleJump], false, -DoubleJumpRate, bStartDoubleJump); // played backwards
         else if (!bDoubleJump && Clock - AirStart < StartLength) PlayClip(Clips[JumpStart], false, JumpStartRate, Clock == AirStart);
         else if (Clips[Fall])
         {
