@@ -56,8 +56,10 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   keine Zeitlupe, kein Counter. Max. 4 Treffer. Nicht pariert → verschwindet.
   Steht man beim Drücken näher als 350 am Gegner: stattdessen Counter-Dash
   mit Ladung (2 Schaden, kein Power-up).
-- Power-up: Normaler Dash (Shift), der mindestens 400 vom Gegner entfernt
-  startet und ihn trifft → 4 s +2 Schaden auf den nächsten Parry-Counter-Dash.
+- Power-up: Kommt man während eines normalen Dashs (Shift) einem Gegner
+  näher als PowerDashHitRadius (180) und lag der Dash-Start mindestens
+  PowerDashMinDistance (300) von ihm entfernt → 4 s +2 Schaden auf den
+  nächsten Parry-Counter-Dash. Keine Lenkung auf den Gegner.
   Rote Umrandung der Lebensanzeige (PowerFrame im HUD). Weg bei Treffer.
 - Counter-Dash-Schaden 2 (ersetzt Guide-Wert 34 und Bonus aus Step 17).
   Nahkämpfer und Fernkämpfer 4 Leben (BP_EnemyBase setzt das bei BeginPlay),
