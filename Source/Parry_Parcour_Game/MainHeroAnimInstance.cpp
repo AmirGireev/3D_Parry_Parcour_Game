@@ -41,20 +41,23 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     const int32 JumpCount = Hero->JumpCurrentCount;
     if (!bFalling) bDoubleJump = false;
     const bool bStartDoubleJump = bFalling && JumpCount >= 2 && JumpCount > LastJumpCount;
-    if (bStartDoubleJump) bDoubleJump = true;
+    if (bStartDoubleJump) { bDoubleJump = true; DoubleJumpStart = Clock; }
+    // The backflip plays once (its own Rate Scale included), afterwards the normal fall takes over.
+    const float FlipLength = Clips[DoubleJump] ? Clips[DoubleJump]->GetPlayLength() / FMath::Max(.01f, DoubleJumpRate * Clips[DoubleJump]->RateScale) : 0.f;
+    const bool bFlipping = bDoubleJump && Clock - DoubleJumpStart < FlipLength;
     LastJumpCount = JumpCount;
 
     // Leaving the ground: jump start when going up, straight into the fall loop when walking off a ledge.
     if (bFalling && !bWasFalling)
     {
         AirStart = Clock;
-        StartLength = (Hero->GetVelocity().Z > 100.f && Clips[JumpStart]) ? Clips[JumpStart]->GetPlayLength() / FMath::Max(.01f, JumpStartRate) : 0.f;
+        StartLength = (Hero->GetVelocity().Z > 100.f && Clips[JumpStart]) ? Clips[JumpStart]->GetPlayLength() / FMath::Max(.01f, JumpStartRate * Clips[JumpStart]->RateScale) : 0.f;
     }
     // Touching down after a real fall: landing clip.
     if (!bFalling && bWasFalling && !bDashing)
     {
         LandStart = Clock;
-        LandLength = Clips[Land] ? Clips[Land]->GetPlayLength() / FMath::Max(.01f, LandRate) : 0.f;
+        LandLength = Clips[Land] ? Clips[Land]->GetPlayLength() / FMath::Max(.01f, LandRate * Clips[Land]->RateScale) : 0.f;
     }
 
     const bool bLanding = !bFalling && Clock - LandStart < LandLength && !(Speed > IdleSpeed && Clock - LandStart > LandMinTime);
@@ -65,8 +68,8 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     }
     else if (bFalling)
     {
-        if (bDoubleJump) PlayClip(Clips[DoubleJump], false, DoubleJumpRate, bStartDoubleJump);
-        else if (Clock - AirStart < StartLength) PlayClip(Clips[JumpStart], false, JumpStartRate, Clock == AirStart);
+        if (bFlipping) PlayClip(Clips[DoubleJump], false, DoubleJumpRate, bStartDoubleJump);
+        else if (!bDoubleJump && Clock - AirStart < StartLength) PlayClip(Clips[JumpStart], false, JumpStartRate, Clock == AirStart);
         else if (Clips[Fall])
         {
             // Ping-pong: play forward to the end, then backward to the start, and so on until landing.
@@ -96,7 +99,7 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     bWasFalling = bFalling;
 
     // Keep the arms below shoulder height in the normal jump only.
-    bLimitArms = bFalling && !bDoubleJump && !bDashing;
+    bLimitArms = bFalling && !bFlipping && !bDashing;
 
     // Parry: guard pose on the upper body, legs keep their locomotion.
     const bool bParrying = ReadBool(Hero, TEXT("bIsParrying"));
