@@ -48,9 +48,17 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   vor; erst wenn man sich wieder entfernt (Ende des Overlaps), werden sie
   markiert, gelber Rand (M_MarkOutline als Overlay). Das Ziel eines Counter-Dashs ist danach
   1,5 s nicht markierbar (nur dieses Ziel), während eines Dashs nie.
-- Counter-Dash-Schaden: markiert 4, sonst 1 (ersetzt den Guide-Wert 34 und
+  Markieren kostet eine Ausweich-Ladung; ohne Ladung wird nicht markiert.
+- Ausweich-Ladungen: Wer in der Nahkampf-Hitbox stand und sie in den letzten
+  0,4 s vor dem Treffer verlässt (Dash oder Laufen), bekommt einen Ausweicher
+  (BP_EnemyBase prüft beim Einschalten der Hitbox, DodgeWindow 0,4).
+  2 Ausweicher = 1 Ladung, max. 2 Ladungen. Anzeige: gelbe Vierecke rechts
+  neben der Lebensanzeige, halb transparent = 1 Ausweicher Fortschritt.
+- Counter-Dash-Schaden: markiert 2, sonst 1 (ersetzt den Guide-Wert 34 und
   den Bonus-Schaden aus Step 17). Kleine Gegner 3 Leben (auch Fernkämpfer,
-  statt Guide-Wert 40), Turm 10.
+  statt Guide-Wert 40), Turm 10. Spieler 5 Leben, jeder gegnerische Treffer 1.
+- Lebensanzeigen in Vierecken (WBP_SegmentBar aus WBP_Segment): Spieler grün
+  oben links (1 Viereck pro Leben), Gegner rot über dem Kopf.
 - Gegner-Angriff im Behavior Tree: ein gemeinsamer Task (BTT_MeleeAttack)
   ruft je nach Gegnertyp StartAttack bzw. StartShoot auf. Fernkämpfer
   schaut per Controller-Fokus immer zum Spieler.
@@ -96,8 +104,8 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   dreht in Laufrichtung). Beim Anvisieren dreht die Kamera einmal zum Ziel
   (nur Yaw), danach ist sie wieder frei. Dreht die Kamera mehr als 40° vom
   Ziel weg (LockViewAngle), löst sich das Lock-On und man kann neu anvisieren.
-  Das anvisierte Ziel zeigt eine rote Lebensleiste über dem Kopf (Widget-
-  Komponente HealthBar mit WBP_EnemyHealthBar; der Hero richtet sie zur
+  Das anvisierte Ziel zeigt seine Lebensanzeige über dem Kopf (Widget-
+  Komponente HealthBar mit WBP_SegmentBar; der Hero richtet sie zur
   Laufzeit ein). Neue Gegner brauchen nur eine Widget-Komponente HealthBar
   und AC_Health.
 - Controller: X/A = Springen, L1 = Parry, R1 = Dash, R2 = Counter-Dash.
