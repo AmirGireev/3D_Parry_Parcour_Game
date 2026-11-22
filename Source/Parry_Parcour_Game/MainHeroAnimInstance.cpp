@@ -75,7 +75,8 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
             if (bEnterFall) { FallTime = 0.f; FallDir = 1.f; }
             else
             {
-                FallTime += DeltaSeconds * FallRate * FallDir;
+                // Include the clip's own Rate Scale (set in the animation asset), same as the player does.
+                FallTime += DeltaSeconds * FallRate * Clips[Fall]->RateScale * FallDir;
                 if (FallTime >= Length) { FallTime = Length; FallDir = -1.f; }
                 else if (FallTime <= 0.f) { FallTime = 0.f; FallDir = 1.f; }
             }
