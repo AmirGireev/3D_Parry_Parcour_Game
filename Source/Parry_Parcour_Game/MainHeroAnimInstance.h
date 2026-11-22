@@ -23,7 +23,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float FallRate = 1.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandRate = 1.f;
     /** Landing is cut short once the player moves again after this many seconds. */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandMinTime = .24f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandMinTime = .15f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float DoubleJumpRate = 2.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float DashRate = 1.5f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float ParryRate = 1.f;
