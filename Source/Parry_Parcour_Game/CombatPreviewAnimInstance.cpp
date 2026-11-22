@@ -63,15 +63,41 @@ struct FCombatPreviewNode : FAnimNode_Base
         const FCompactPoseBoneIndex Parent=Out.Pose.GetParentBoneIndex(Hand);
         Out.Pose[Hand]=HandCS.GetRelativeTransform(CS.GetComponentSpaceTransform(Parent));
     }
+    // Upper-body overlay: blends OverlayRoot and all its children from a second clip on top of the base pose.
+    FAnimNode_SequencePlayer_Standalone Overlay;
+    UAnimSequence* OverlayWanted = nullptr;
+    FName OverlayRoot = NAME_None;
+    float OverlayRate = 1.f, OverlayAlpha = 0.f, OverlayBlendTime = .08f;
+    bool OverlayActive = false, OverlayPending = false;
+    void ApplyOverlay(FPoseContext& Out)
+    {
+        if (OverlayAlpha <= 0.f || !Overlay.GetSequence() || OverlayRoot.IsNone()) return;
+        const FBoneContainer& Bones=Out.Pose.GetBoneContainer();
+        const int32 RootRef=Bones.GetReferenceSkeleton().FindBoneIndex(OverlayRoot);
+        if (RootRef==INDEX_NONE) return;
+        const FCompactPoseBoneIndex Root=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(RootRef));
+        if (Root.GetInt()==INDEX_NONE) return;
+        FPoseContext Layer(Out);
+        Overlay.Evaluate_AnyThread(Layer);
+        for (FCompactPoseBoneIndex I : Out.Pose.ForEachBoneIndex())
+        {
+            if (I!=Root && !Bones.BoneIsChildOf(I,Root)) continue;
+            FTransform T=Out.Pose[I];
+            T.BlendWith(Layer.Pose[I],OverlayAlpha);
+            Out.Pose[I]=T;
+        }
+    }
     virtual void Initialize_AnyThread(const FAnimationInitializeContext& C) override
     {
         Current.Initialize_AnyThread(C);
         Previous.Initialize_AnyThread(C);
+        Overlay.Initialize_AnyThread(C);
     }
     virtual void CacheBones_AnyThread(const FAnimationCacheBonesContext& C) override
     {
         Current.CacheBones_AnyThread(C);
         Previous.CacheBones_AnyThread(C);
+        Overlay.CacheBones_AnyThread(C);
     }
     virtual void Update_AnyThread(const FAnimationUpdateContext& C) override
     {
@@ -92,11 +118,27 @@ struct FCombatPreviewNode : FAnimNode_Base
         Current.SetPlayRate(Rate);
         Current.Update_AnyThread(C.FractionalWeight(Blend));
         if (HasPrevious && Blend < 1.f) Previous.Update_AnyThread(C.FractionalWeight(1.f-Blend));
+        if (OverlayPending)
+        {
+            Overlay.SetSequence(OverlayWanted);
+            Overlay.SetLoopAnimation(false);
+            Overlay.SetStartPosition(0.f);
+            Overlay.Initialize_AnyThread(FAnimationInitializeContext(C.AnimInstanceProxy));
+            Overlay.CacheBones_AnyThread(FAnimationCacheBonesContext(C.AnimInstanceProxy));
+            OverlayPending = false;
+        }
+        const float Step = C.GetDeltaTime() / FMath::Max(.01f, OverlayBlendTime);
+        OverlayAlpha = FMath::Clamp(OverlayAlpha + (OverlayActive ? Step : -Step), 0.f, 1.f);
+        if (OverlayAlpha > 0.f && Overlay.GetSequence())
+        {
+            Overlay.SetPlayRate(OverlayRate);
+            Overlay.Update_AnyThread(C.FractionalWeight(OverlayAlpha));
+        }
     }
     virtual void Evaluate_AnyThread(FPoseContext& Out) override
     {
         if (!Current.GetSequence()) { Out.ResetToRefPose(); return; }
-        if (!HasPrevious || Blend >= 1.f) { Current.Evaluate_AnyThread(Out); AimGuard(Out); LowerArms(Out); return; }
+        if (!HasPrevious || Blend >= 1.f) { Current.Evaluate_AnyThread(Out); AimGuard(Out); LowerArms(Out); ApplyOverlay(Out); return; }
         FPoseContext A(Out), B(Out);
         Previous.Evaluate_AnyThread(A);
         Current.Evaluate_AnyThread(B);
@@ -104,6 +146,7 @@ struct FCombatPreviewNode : FAnimNode_Base
         FAnimationRuntime::BlendTwoPosesTogether(AD, BD, 1.f-Blend, OD);
         AimGuard(Out);
         LowerArms(Out);
+        ApplyOverlay(Out);
     }
 };
 
@@ -111,6 +154,7 @@ struct FCombatPreviewProxy : FAnimInstanceProxy
 {
     FCombatPreviewNode Node;
     int32 SeenRevision = -1;
+    int32 SeenOverlayRevision = -1;
     FCombatPreviewProxy(UAnimInstance* Instance) : FAnimInstanceProxy(Instance) {}
     virtual FAnimNode_Base* GetCustomRootNode() override { return &Node; }
     virtual void PreUpdate(UAnimInstance* Instance, float Delta) override
@@ -122,6 +166,16 @@ struct FCombatPreviewProxy : FAnimInstanceProxy
         Node.GuardDirection=Anim->GuardDirection;
         Node.LimitArms=Anim->bLimitArms;
         Node.ArmMaxElevation=Anim->ArmMaxElevation;
+        Node.OverlayActive=Anim->bOverlayActive;
+        Node.OverlayRate=Anim->OverlayRate;
+        Node.OverlayRoot=Anim->OverlayRoot;
+        Node.OverlayBlendTime=Anim->OverlayBlendTime;
+        if (SeenOverlayRevision != Anim->OverlayRevision)
+        {
+            Node.OverlayWanted = Anim->OverlayClip;
+            Node.OverlayPending = Anim->OverlayClip != nullptr;
+            SeenOverlayRevision = Anim->OverlayRevision;
+        }
         if (SeenRevision != Anim->Revision)
         {
             Node.Wanted = Anim->Clip;

@@ -17,6 +17,15 @@ public:
     /** When true, upper arms are rotated down so they never point higher than ArmMaxElevation (degrees, negative = below horizontal). */
     UPROPERTY(Transient) bool bLimitArms = false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Arms") float ArmMaxElevation = -25.f;
+    /** Upper-body layer: OverlayRoot and its children come from OverlayClip while bOverlayActive (fades in/out over OverlayBlendTime). */
+    UPROPERTY(Transient) TObjectPtr<UAnimSequence> OverlayClip;
+    UPROPERTY(Transient) bool bOverlayActive = false;
+    UPROPERTY(Transient) float OverlayRate = 1.f;
+    UPROPERTY(Transient) FName OverlayRoot = TEXT("spine_01");
+    UPROPERTY(Transient) float OverlayBlendTime = .08f;
+    UPROPERTY(Transient) int32 OverlayRevision = 0;
+    /** Starts (or restarts) the upper-body clip. */
+    void PlayOverlay(UAnimSequence* InClip, float PlayRate = 1.f) { if (!InClip) return; OverlayClip = InClip; OverlayRate = PlayRate; bOverlayActive = true; ++OverlayRevision; }
     void PlayClip(UAnimSequence* InClip, bool Loop = true, float PlayRate = 1.f, bool Restart = false);
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
