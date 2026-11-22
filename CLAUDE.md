@@ -1,4 +1,4 @@
-# Projekt: Parry-Dash-Game (Unreal Engine 5.8, Blueprint)
+﻿# Projekt: Parry-Dash-Game (Unreal Engine 5.8, Blueprint)
 
 ## Ziel
 3D-Parry-Parkour-Spiel. Kern: Parry → kurze Zeitlupe → Counter-Dash
