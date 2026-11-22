@@ -123,6 +123,16 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Kamera: Arm 550, Socket-Offset Z 150, Kamera 10° nach unten geneigt, kein
   Camera Lag.
 
+## Map (L_ParkourTest, Ordner „Map“ im Outliner)
+Entlang +X: Spawn-Raum (−1200..1200, Boden 0, Wände 500 hoch, Ausgang vorne)
+→ Weg mit Deckung und Fernkämpfer (x 3700) → Parkour 1 (Plattformen 50/150/
+250, Balken) → Nahkämpfer-Plattform (x 7400..9400, Höhe 300) → Parkour 2
+(400/500/600, Säule 700) → Boss-Arena (x 12200..15200, Höhe 650, Wände,
+Turm als Boss-Platzhalter, Scale 2). Grau/Dunkel = LevelPrototyping-Grids.
+Fall-Trigger (TriggerBox bei z −900) lädt das Level neu. Nach Umbauten:
+„RebuildNavigation“ und Level über File → Save Current Level speichern
+(Speichern per MCP sichert die einzelnen Actor-Dateien nicht).
+
 ## Konventionen
 - Ordner und Namenspräfixe exakt wie in Step 1 (_Game/..., BP_, ABP_,
   AM_, AC_, IA_, IMC_, WBP_ ...).
