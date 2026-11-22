@@ -1,0 +1,41 @@
+MOSSBOUND FORT — ARENA REFERENCE SPECIFICATION v1
+
+Purpose: proposed visual design for a future Unreal environment build.
+This is not a survey of the existing L_MossboundFort blockout.
+Generated views communicate appearance; this written layout governs dimensions.
+Check all dimensions with the existing characters and movement before final art.
+
+COORDINATES
+Arena centre = (0,0,0). All measurements below are metres.
+North = Unreal +X; east = Unreal +Y; Z = height. Unreal units = metres * 100.
+On the plan north is up, east right. Court floor Z = 0.
+
+LAYOUT
+Court: circular, 20 m outer diameter; 14 m diameter clear central combat floor.
+Outer 3 m band: architecture, circulation and planting only.
+Gatehouse: north / 12 o'clock; 6 m wide, 3 m deep, roughly 7 m high.
+Gate opening: 3 m wide, 4.5 m high; burgundy banner above.
+West balcony: 8–11 o'clock, 2.5 m wide, deck Z = +2 m.
+Balcony stairs: southwest / 8 o'clock; ascend northwards; 1.5 m wide.
+Stairs: provisional 12 risers at 0.1667 m, 0.30 m tread, roughly 3.3 m run.
+East timber walkway: 2–4 o'clock, 1.5 m wide, court level.
+Entry bridge: southeast / 5 o'clock, 3 m wide, 8 m long, court level.
+Southwest: rooted tree and broken stone arch at 7 o'clock.
+Hero reference height: 1 m. Fallen knight reference height: 3 m.
+Ravine: visually below platform; depth and collision require blockout decisions.
+
+ART
+Warm grey chunky stone; weathered dark timber; olive/moss green growth.
+Muted burgundy banners connect architecture with the knight's cape.
+Soft warm afternoon sunlight; cool forest shade; mist only beyond the arena.
+Radial paving motif remains flush; moss mainly in perimeter and narrow seams.
+Keep floor, sword silhouettes, approach routes and edge conditions readable.
+
+BUILD USE
+Use the top plan for footprint and landmark placement.
+Use elevations for height relationships and modular architecture.
+Use perspectives for material, lighting, foliage and visual composition.
+Resolve any generated-view disagreement against this specification and the plan.
+Do not infer reliable collision or walkability from an illustration.
+Validate camera clearance, knight swings, dash distance, stairs and fall edges in Unreal.
+No gameplay, level assets or existing project source changed for this reference set.

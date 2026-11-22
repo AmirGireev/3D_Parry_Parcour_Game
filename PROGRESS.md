@@ -1,5 +1,28 @@
 # Fortschritt
 
+## Erste Arena nach den freigegebenen Stilreferenzen
+
+- Neuer Level `L_MossboundArena`: runder Hof mit 20 m Durchmesser und 14 m freier Kampffläche, nördliches Tor, westlicher Balkon auf 2 m mit Treppe, östlicher Holzweg auf Hofhöhe, südöstliche Steinbrücke und kahler Baum im Südwesten. Der bisherige Fort-Testlevel bleibt erhalten.
+- Einfache, weiche Steinformen und matte Materialien setzen die Richtung „Cute/Minimal + Dark Fantasy/Melancholie“ um. Vier lokale Nebelvolumen, volumetrischer Höhennebel und kühles Licht am Tor erzeugen die Atmosphäre. Drei Referenzkameras sind im Level gespeichert.
+- Umgebung als normale Unreal-Actors, statische Meshes und Material-Nodes gespeichert; keine neuen C++-Klassen oder externen Laufzeitskripte. Python dient nur dem optionalen Aufbau und der Prüfung. Neue Spiellogik soll mit einfachen Blueprint-Nodes entstehen. Der vorhandene C++-Kampfadapter wurde hier nicht in Blueprint umgebaut.
+- Geprüft: Boden bis 6,99 m Radius, freie Toröffnung, Balkonhöhe, ebener Ostweg, Brückenoberfläche und alle zwölf Treppenhöhen. In PIE: vorhandener Held und Ritter korrekt geladen, Held steht auf dem Boden, Kampfadapter startet. Material-Verbindungen korrigiert; abschließender Spielstart ohne neue Material-Kompilierfehler. Prüfzusammenfassung in `Tools/CombatTest/arena-validation.json`.
+- Erster Art-Pass: Baum, Felsen, Begrünung und genauere Übereinstimmung mit der Illustration benötigen weitere Politur. Bewegung, Kamera und Sprünge bitte selbst im neuen Level testen. Kurze Erklärung für die Präsentation: `docs/mossbound-arena.txt`.
+
+## Kampfprototyp im Fort
+
+### Nachbesserung: Todes-Respawn und sichtbarer Konterschaden
+
+- Ursache des falschen Spiels gefunden: Der OnDeath-Pfad in BP_PlayerHero lud hart `L_ParkourTest`. Er ermittelt jetzt den aktuellen Levelnamen ohne PIE-Präfix und lädt diesen. Bewegung, Parry, Markieren und die bestehenden Dash-Regeln bleiben erhalten.
+- Boss-Lebenspunkte und bestätigter Konterschaden werden im Fort-Test eingeblendet. Nach erfolgreicher Parade löst Linksklick über die vorhandene Input Action den Durchstoß aus; Standard-Schaden 1, markiert 4.
+- Mit der tatsächlichen Enhanced-Input-Action `IA_CounterDash` in PIE geprüft: Counter-Fenster offen, Durchstoß ca. 686 cm, Dash beendet, Bossleben 100 → 99. Anschließend 2000 Schaden am Spieler ausgelöst: Todes-Respawn in `L_MossboundFort`, Mesh `SK_Hero` wiederhergestellt. Editor-C++-Build und Blueprint-Kompilierung erfolgreich.
+
+- Neuer Testlevel `L_MossboundFort`: erhöhter Steinhof, Holzstege, Balkon mit Treppe, Brücke, offene Kanten und Begrünung. Die Umgebung ist ein spielbarer Blockout.
+- Texturierter Moosheld und Ritterboss mit gebackenen Animationen; Referenzhöhen 100 cm und 300 cm. Waffen folgen starr den Griffknochen, `BladeBase`/`BladeTip` begrenzen die sichtbaren Klingen.
+- Eigenständiger nativer Test-Controller nutzt die vorhandenen Spieler- und Gegner-Blueprints. Zeitlich begrenzte, zwischen Frames abgetastete Klingenkontakte lösen echte Schwertparaden, Kontaktblitze und vier metallische Klangvarianten aus. Körpertreffer werden getrennt gezählt. Der Boss hat zwei Nahkampfmuster und den vorhandenen Projektilangriff.
+- Trainingsmodus mit 1000 Spielerleben, F1 für Klingenspuren, F2 für automatische Test-Abwehr und R zum Neustart. Fall unter den Level startet denselben Fort-Test neu. Die ursprünglichen Bewegungs-, Parry- und Dash-Mechaniken bleiben unverändert; der Todes-Respawn verwendet jetzt den aktuellen Level.
+- Geprüft: Editor-C++-Build erfolgreich; Schnitt-, Abstand- und Streifkontaktprüfungen bestanden; mehrere echte Klingenparaden und Körpertreffer in PIE erfasst. Erfolgreiche Parade setzt das bestehende Counter-Fenster und Dash-Ziel. Vollständige Start-/Dauer-/Ende-Kette des Counter-Dash geprüft (ca. 596 cm, anschließend beendet). Kanten-Respawn und Wiederherstellung des Heldenmodells im Fort bestanden. Alle vier Parry-Sounds geladen (je 1 s).
+- Grenzen: Animations- und Umgebungsprototyp, weitere Politur bleibt nötig. Der bereits vorhandene Start-Hinweis zu `GameFeatureData` wurde nicht durch Änderungen an fremden Plugin-/Projekt-Einstellungen behoben. Dieser Test markiert nicht sämtliche späteren Guide-Schritte als abgeschlossen.
+
 | Step | Status | Notizen |
 |------|--------|---------|
 | 1–8  | fertig | Vor Einführung dieser Datei abgeschlossen |

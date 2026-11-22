@@ -1,0 +1,26 @@
+{
+  "Hero": {
+    "reference_height_m": 1,
+    "target_height_cm": 100,
+    "blade_length_m": 0.3850000293167204,
+    "clips": [
+      "Idle",
+      "Run",
+      "Jump",
+      "Dash",
+      "Parry"
+    ]
+  },
+  "Boss": {
+    "reference_height_m": 3,
+    "target_height_cm": 300,
+    "blade_length_m": 1.4700000198798957,
+    "clips": [
+      "Idle",
+      "Combo",
+      "Sweep",
+      "Walk",
+      "Cast"
+    ]
+  }
+}
