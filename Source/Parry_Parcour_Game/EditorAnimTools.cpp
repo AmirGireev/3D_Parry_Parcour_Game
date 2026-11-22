@@ -62,6 +62,14 @@ static void AnimInfo(const TArray<FString>& Args)
         const float R = FootR != INDEX_NONE ? ComponentTransform(Model, Ref, FootR, N).GetLocation().Z : 0.f;
         UE_LOG(LogTemp, Display, TEXT("ParryAnim F %d t=%.3f pelvis=%.4f footL=%.4f footR=%.4f"), F, Rate.AsSeconds(N), P, L, R);
     }
+    // Full positions of pelvis and hands at the first frame (useful to place hanging poses).
+    for (const TCHAR* Bone : {TEXT("Hips"), TEXT("pelvis"), TEXT("LeftHand"), TEXT("RightHand"), TEXT("hand_l"), TEXT("hand_r")})
+    {
+        const int32 B = Ref.FindBoneIndex(Bone);
+        if (B == INDEX_NONE) continue;
+        const FVector V = ComponentTransform(Model, Ref, B, FFrameNumber(0)).GetLocation();
+        UE_LOG(LogTemp, Display, TEXT("ParryAnim POS %s x=%.4f y=%.4f z=%.4f"), Bone, V.X, V.Y, V.Z);
+    }
 }
 
 static void TrimAnim(const TArray<FString>& Args)
@@ -148,13 +156,31 @@ static void InPlace(const TArray<FString>& Args)
         ParentCS.Add(Parent != INDEX_NONE ? ComponentTransform(Model, Ref, Parent, N) : FTransform::Identity);
         PelvisCS.Add(Local.Last() * ParentCS.Last());
     }
+    // Optional extra words: "z" also removes height drift, "yaw" also removes turning around the up axis.
+    bool bZ = false, bYaw = false;
+    for (int32 I = 1; I < Args.Num(); ++I) { bZ |= Args[I].Equals(TEXT("z"), ESearchCase::IgnoreCase); bYaw |= Args[I].Equals(TEXT("yaw"), ESearchCase::IgnoreCase); }
     FVector Drift = PelvisCS.Last().GetLocation() - PelvisCS[0].GetLocation();
-    Drift.Z = 0.f;
+    if (!bZ) Drift.Z = 0.f;
+    // "addz=<units>" removes this much extra height over the clip (e.g. to match how far the capsule climbs).
+    for (int32 I = 1; I < Args.Num(); ++I)
+        if (Args[I].StartsWith(TEXT("addz="), ESearchCase::IgnoreCase)) Drift.Z += FCString::Atof(*Args[I].Mid(5));
+    // Yaw drift: heading of the pelvis forward axis in the horizontal plane, first vs last key.
+    auto Heading = [](const FTransform& T) { FVector F = T.GetRotation().GetAxisX(); F.Z = 0.f; return FMath::Atan2(F.Y, F.X); };
+    const float YawDrift = bYaw ? FMath::FindDeltaAngleRadians(Heading(PelvisCS[0]), Heading(PelvisCS.Last())) : 0.f;
     TArray<FVector> Pos; TArray<FQuat> Rot; TArray<FVector> Scale;
     for (int32 K = 0; K < Keys; ++K)
     {
         FTransform CS = PelvisCS[K];
-        CS.SetLocation(CS.GetLocation() - Drift * (float(K) / float(Keys - 1)));
+        const float Alpha = float(K) / float(Keys - 1);
+        CS.SetLocation(CS.GetLocation() - Drift * Alpha);
+        if (bYaw)
+        {
+            // Rotate pelvis back around the vertical axis (through its first-frame position).
+            const FQuat Undo(FVector::UpVector, -YawDrift * Alpha);
+            const FVector Pivot = PelvisCS[0].GetLocation();
+            CS.SetLocation(Pivot + Undo.RotateVector(CS.GetLocation() - Pivot));
+            CS.SetRotation(Undo * CS.GetRotation());
+        }
         const FTransform NewLocal = CS.GetRelativeTransform(ParentCS[K]);
         Pos.Add(NewLocal.GetLocation()); Rot.Add(NewLocal.GetRotation()); Scale.Add(NewLocal.GetScale3D());
     }
@@ -163,7 +189,7 @@ static void InPlace(const TArray<FString>& Args)
     const bool bOk = Controller.SetBoneTrackKeys(PelvisBone, Pos, Rot, Scale);
     Controller.CloseBracket();
     Seq->MarkPackageDirty();
-    UE_LOG(LogTemp, Display, TEXT("ParryAnim INPLACE %s drift=(%.4f, %.4f) ok=%d"), *Seq->GetName(), Drift.X, Drift.Y, bOk ? 1 : 0);
+    UE_LOG(LogTemp, Display, TEXT("ParryAnim INPLACE %s drift=(%.4f, %.4f, %.4f) yaw=%.1f ok=%d"), *Seq->GetName(), Drift.X, Drift.Y, Drift.Z, FMath::RadiansToDegrees(YawDrift), bOk ? 1 : 0);
 }
 
 // Reference pose of a bone in component space.

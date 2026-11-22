@@ -73,6 +73,13 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   zum nächsten anderen Gegner in 1500 Reichweite weiter-dashen (nie zum
   gerade getroffenen). Angekettete Counter-Dashs machen 1 Schaden.
 - Parry: 0,75 s Zeitlupe (Faktor 0,2), Counter-Dash beendet sie sofort.
+  Ein Druck pariert genau einen Treffer (Schlag, Projektil oder Ball): jeder
+  erfolgreiche Parry ruft ConsumeParry (C++), das das Parry-Fenster schließt
+  und die Figur (nicht die Kamera) zum Angreifer dreht.
+- Kantengriff (C++-Komponente MoveExtras/HeroMovementExtras am Hero): im Fall
+  gerade Kante vor sich packen (Kapselmitte 144 unter Kante), A/D hangeln
+  nur entlang gerader Kanten (keine Ecken), Sprung = hochklettern
+  (HangToCrouch → CrouchToStand), S = loslassen.
 - Counter-Dash fliegt in 3D auf einen Punkt fast ganz unten am Ziel: Fußhöhe
   des Ziels + eigene halbe Kapselhöhe + CounterAimOffset (10), so bleibt man
   auf Bodenhöhe des Gegners (ohne Kapsel z. B. Turm: Mitte der
@@ -125,8 +132,9 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   Dash-Animation und ohne FOV-Änderung.
 - Lock-On (Universal Lock-On, mittlere Maustaste) als Soft Lock: Ziel wird
   nur markiert (Anzeige auf spine_04) und ist Ziel des Counter-Dashs; Kamera
-  und Figur bleiben frei (allowTracking aus, Kamera-Steuerung Freecam, Figur
-  dreht in Laufrichtung). Beim Anvisieren dreht die Kamera einmal zum Ziel
+  bleibt frei (allowTracking aus, Kamera-Steuerung Freecam). Im Lock-On
+  schaut die Figur zum Ziel und läuft seitwärts (Strafe-Clips Gehen/Rennen,
+  rückwärts = Laufclip rückwärts), sonst dreht sie in Laufrichtung. Beim Anvisieren dreht die Kamera einmal zum Ziel
   (nur Yaw), danach ist sie wieder frei. Dreht die Kamera mehr als 40° vom
   Ziel weg (LockViewAngle), löst sich das Lock-On und man kann neu anvisieren.
   Das anvisierte Ziel zeigt seine Lebensanzeige über dem Kopf (Widget-

@@ -1,4 +1,5 @@
 #include "MainHeroAnimInstance.h"
+#include "HeroMovementExtras.h"
 #include "Animation/AnimSequence.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -6,7 +7,8 @@
 
 namespace
 {
-enum EClip { Idle, Walk, Run, JumpStart, Fall, Land, DoubleJump, Dash, Parry, Count };
+enum EClip { Idle, Walk, Run, JumpStart, Fall, Land, DoubleJump, Dash, Parry,
+             TurnL, TurnR, StrafeLWalk, StrafeRWalk, StrafeLRun, StrafeRRun, HangShimmy, HangToCrouch, CrouchToStand, Count };
 
 bool ReadBool(const UObject* Owner, FName Name)
 {
@@ -19,7 +21,9 @@ void UMainHeroAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
     Clips.Reset();
-    for (const TCHAR* Name : {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("JumpStart"), TEXT("Fall"), TEXT("Land"), TEXT("DoubleJump"), TEXT("Dash"), TEXT("Parry")})
+    for (const TCHAR* Name : {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("JumpStart"), TEXT("Fall"), TEXT("Land"), TEXT("DoubleJump"), TEXT("Dash"), TEXT("Parry"),
+                              TEXT("TurnLeft"), TEXT("TurnRight"), TEXT("StrafeLeftWalk"), TEXT("StrafeRightWalk"), TEXT("StrafeLeftRun"), TEXT("StrafeRightRun"),
+                              TEXT("HangShimmy"), TEXT("HangToCrouch"), TEXT("CrouchToStand")})
         Clips.Add(LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/_Game/Art/Main/Anims/Anim_Main_%s.Anim_Main_%s"), Name, Name)));
     // Upper-body layer starts at the first spine bone (UE mannequin "spine_01", Mixamo "Spine").
     OverlayRoot = TEXT("spine_01");
@@ -65,6 +69,36 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     const bool bLanding = !bFalling && Clock - LandStart < LandLength && !(Speed > IdleSpeed && Clock - LandStart > LandMinTime);
 
+    // Turning: yaw change per second (positive = turning right).
+    const float Yaw = Hero->GetActorRotation().Yaw;
+    const float YawRate = bHaveYaw && DeltaSeconds > 0.f ? FMath::FindDeltaAngleDegrees(LastYaw, Yaw) / DeltaSeconds : 0.f;
+    LastYaw = Yaw; bHaveYaw = true;
+
+    const UHeroMovementExtras* Extras = Hero->FindComponentByClass<UHeroMovementExtras>();
+    const EHeroLedgeState Ledge = Extras ? Extras->LedgeState : EHeroLedgeState::None;
+    const bool bStrafing = Extras && Extras->bStrafing;
+
+    if (Ledge != EHeroLedgeState::None)
+    {
+        const bool bNewState = (uint8)Ledge != LastLedge;
+        if (Ledge == EHeroLedgeState::Hanging)
+        {
+            // Shimmy clip forwards for one side, backwards for the other; frozen while hanging still.
+            const float Dir = Extras->ShimmyDir;
+            PlayClip(Clips[HangShimmy], true, Dir != 0.f ? ShimmyRate * Dir : 0.f, bNewState);
+        }
+        else if (Ledge == EHeroLedgeState::ClimbUp && Clips[HangToCrouch])
+            PlayClip(Clips[HangToCrouch], false, Clips[HangToCrouch]->GetPlayLength() / FMath::Max(.05f, Extras->ClimbUpTime), bNewState);
+        else if (Ledge == EHeroLedgeState::StandUp && Clips[CrouchToStand])
+            PlayClip(Clips[CrouchToStand], false, Clips[CrouchToStand]->GetPlayLength() / FMath::Max(.05f, Extras->StandUpTime), bNewState);
+        LastLedge = (uint8)Ledge;
+        bWasFalling = false;
+        bLimitArms = false;
+        bOverlayActive = false;
+        return;
+    }
+    LastLedge = (uint8)Ledge;
+
     if (bDashing)
     {
         PlayClip(Clips[Dash], true, DashRate);
@@ -93,11 +127,44 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     {
         PlayClip(Clips[Land], false, LandRate, Clock == LandStart);
     }
+    else if (bStrafing && Speed > IdleSpeed)
+    {
+        // Locked on: hero faces the target, movement relative to the facing picks the clip.
+        const FVector V = Hero->GetVelocity();
+        const float Fwd = FVector::DotProduct(V, Hero->GetActorForwardVector());
+        const float Side = FVector::DotProduct(V, Hero->GetActorRightVector());
+        const bool bRun = Speed >= RunSpeed;
+        if (FMath::Abs(Side) > FMath::Abs(Fwd))
+        {
+            if (Side > 0.f) PlayClip(Clips[bRun ? StrafeRRun : StrafeRWalk], true, bRun ? StrafeRunRate : StrafeWalkRate);
+            else PlayClip(Clips[bRun ? StrafeLRun : StrafeLWalk], true, bRun ? StrafeRunRate : StrafeWalkRate);
+        }
+        else
+        {
+            // Backwards = walk/run clip played in reverse.
+            const float Sign = Fwd >= 0.f ? 1.f : -1.f;
+            PlayClip(Clips[bRun ? Run : Walk], true, (bRun ? RunRate : WalkRate) * Sign);
+        }
+    }
     else
     {
-        if (Speed <= IdleSpeed) PlayClip(Clips[Idle], true);
-        else if (Speed < RunSpeed) PlayClip(Clips[Walk], true, WalkRate);
-        else PlayClip(Clips[Run], true, RunRate);
+        // Short tap on the stick / A / D: the hero mostly turns on the spot -> turn clip.
+        if (!bStrafing && Speed < TurnMaxSpeed && FMath::Abs(YawRate) > TurnMinYawRate && Clock >= TurnUntil)
+        {
+            TurnSign = FMath::Sign(YawRate);
+            const UAnimSequence* T = Clips[TurnSign > 0.f ? TurnR : TurnL];
+            TurnUntil = T ? Clock + T->GetPlayLength() / FMath::Max(.05f, TurnRate) : Clock;
+            if (T) PlayClip(Clips[TurnSign > 0.f ? TurnR : TurnL], false, TurnRate, true);
+        }
+        const bool bTurning = Clock < TurnUntil && Speed < TurnMaxSpeed;
+        if (bTurning) PlayClip(Clips[TurnSign > 0.f ? TurnR : TurnL], false, TurnRate);
+        else
+        {
+            TurnUntil = -1.f;
+            if (Speed <= IdleSpeed) PlayClip(Clips[Idle], true);
+            else if (Speed < RunSpeed) PlayClip(Clips[Walk], true, WalkRate);
+            else PlayClip(Clips[Run], true, RunRate);
+        }
     }
     bWasFalling = bFalling;
 
