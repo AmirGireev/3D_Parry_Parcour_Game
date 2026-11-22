@@ -44,8 +44,9 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Zwei getrennte Dashes: Shift (IA_Dash) = normaler Dash in Eingaberichtung,
   0,75 s Cooldown, kein Schaden. Linksklick (IA_CounterDash) = Counter-Dash,
   nur nach Parry oder in der Ketten-Phase, ohne Cooldown.
-- Markieren: Kontakt (MarkZone am Hero) markiert Gegner mit Tag Enemy, gelber
-  Rand (M_MarkOutline als Overlay). Das Ziel eines Counter-Dashs ist danach
+- Markieren: Kontakt (MarkZone am Hero) mit Gegnern mit Tag Enemy merkt sie
+  vor; erst wenn man sich wieder entfernt (Ende des Overlaps), werden sie
+  markiert, gelber Rand (M_MarkOutline als Overlay). Das Ziel eines Counter-Dashs ist danach
   1,5 s nicht markierbar (nur dieses Ziel), während eines Dashs nie.
 - Counter-Dash-Schaden: markiert 4, sonst 1 (ersetzt den Guide-Wert 34 und
   den Bonus-Schaden aus Step 17). Kleine Gegner 3 Leben (auch Fernkämpfer,
