@@ -44,27 +44,32 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Zwei getrennte Dashes: Shift (IA_Dash) = normaler Dash in Eingaberichtung,
   0,75 s Cooldown, kein Schaden. Linksklick (IA_CounterDash) = Counter-Dash,
   nur nach Parry oder in der Ketten-Phase, ohne Cooldown.
-- Markieren: Kontakt (MarkZone am Hero) mit Gegnern mit Tag Enemy merkt sie
-  vor; erst wenn man sich wieder entfernt (Ende des Overlaps), werden sie
-  markiert, gelber Rand (M_MarkOutline als Overlay). Das Ziel eines Counter-Dashs ist danach
-  1,5 s nicht markierbar (nur dieses Ziel), während eines Dashs nie.
-  Markieren kostet eine Ausweich-Ladung; ohne Ladung wird nicht markiert.
-- Ausweich-Ladungen: Wer in der Nahkampf-Hitbox stand und sie in den letzten
-  0,4 s vor dem Treffer verlässt (Dash oder Laufen), bekommt einen Ausweicher
-  (BP_EnemyBase prüft beim Einschalten der Hitbox, DodgeWindow 0,4).
-  2 Ausweicher = 1 Ladung, max. 2 Ladungen. Anzeige: blaue Vierecke unter
-  der Lebensanzeige, halb transparent = 1 Ausweicher Fortschritt.
-- Ein Counter-Dash durch einen markierten Gegner heilt 1 Leben (bis max.).
-- Counter-Dash-Schaden: markiert 2, sonst 1 (ersetzt den Guide-Wert 34 und
-  den Bonus-Schaden aus Step 17). Kleine Gegner 3 Leben (auch Fernkämpfer,
-  statt Guide-Wert 40), Turm 10. Spieler 5 Leben, jeder gegnerische Treffer 1.
+- Keine Markierungen mehr (MarkZone, Outline, Heilung entfernt), kein
+  Ausweichen-für-Ladung mehr.
+- Ladungen: Jeder grüne Parry (Teil-Parry) gibt eine halbe Ladung, 2 Hälften
+  = 1 Ladung, max. 2 (Variablen DodgeCharges/DodgeProgress). Anzeige: blaue
+  Vierecke unter der Lebensanzeige, halb transparent = halbe Ladung.
+- Ping-Pong-Ball (E / L2, IA_Ball, BP_PingPongBall): kostet 1 Ladung, fliegt
+  zum anvisierten Gegner, sonst zum nächsten, und folgt Ziel bzw. Spieler zu
+  100 %. Treffer = 1 Schaden, dann zurück zum Spieler (1800 → 3200 → 5500).
+  Mit Parry zurückschlagen (Parry-Fenster offen, Ball in 220): keine Ladung,
+  keine Zeitlupe, kein Counter. Max. 4 Treffer. Nicht pariert → verschwindet.
+  Steht man beim Drücken näher als 350 am Gegner: stattdessen Counter-Dash
+  mit Ladung (2 Schaden, kein Power-up).
+- Power-up: Normaler Dash (Shift), der mindestens 400 vom Gegner entfernt
+  startet und ihn trifft → 4 s +2 Schaden auf den nächsten Parry-Counter-Dash.
+  Rote Umrandung der Lebensanzeige (PowerFrame im HUD). Weg bei Treffer.
+- Counter-Dash-Schaden 2 (ersetzt Guide-Wert 34 und Bonus aus Step 17).
+  Nahkämpfer und Fernkämpfer 4 Leben (BP_EnemyBase setzt das bei BeginPlay),
+  Turm 10. Spieler 5 Leben, jeder gegnerische Treffer 1.
 - Lebensanzeigen in Vierecken (WBP_SegmentBar aus WBP_Segment): Spieler grün
   oben links (1 Viereck pro Leben), Gegner rot über dem Kopf.
 - Gegner-Angriff im Behavior Tree: ein gemeinsamer Task (BTT_MeleeAttack)
   ruft je nach Gegnertyp StartAttack bzw. StartShoot auf. Fernkämpfer
   schaut per Controller-Fokus immer zum Spieler.
-- Kette: Sind nach einem Counter-Dash noch Gegner markiert, löst Linksklick
-  innerhalb von 1 s den nächsten Counter-Dash zum nächsten markierten Gegner aus.
+- Kette: Nach jedem Counter-Dash kann man innerhalb von 1 s mit Linksklick
+  zum nächsten anderen Gegner in 1500 Reichweite weiter-dashen (nie zum
+  gerade getroffenen). Angekettete Counter-Dashs machen 1 Schaden.
 - Parry: 0,75 s Zeitlupe (Faktor 0,2), Counter-Dash beendet sie sofort.
 - Counter-Dash fliegt in 3D auf einen Punkt fast ganz unten am Ziel: Fußhöhe
   des Ziels + eigene halbe Kapselhöhe + CounterAimOffset (10), so bleibt man
@@ -119,7 +124,8 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   Komponente HealthBar mit WBP_SegmentBar; der Hero richtet sie zur
   Laufzeit ein). Neue Gegner brauchen nur eine Widget-Komponente HealthBar
   und AC_Health.
-- Controller: X/A = Springen, L1 = Parry, R1 = Dash, R2 = Counter-Dash.
+- Controller: X/A = Springen, L1 = Parry, R1 = Dash, R2 = Counter-Dash,
+  L2 = Ping-Pong-Ball.
 - Kamera: Arm 550, Socket-Offset Z 150, Kamera 10° nach unten geneigt, kein
   Camera Lag.
 
