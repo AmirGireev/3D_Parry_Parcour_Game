@@ -1,4 +1,4 @@
-#include "SwordCombatTest.h"
+﻿#include "SwordCombatTest.h"
 #include "CombatPreviewAnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Components/CapsuleComponent.h"
@@ -59,10 +59,10 @@ ASwordCombatTest::ASwordCombatTest()
 void ASwordCombatTest::BeginPlay()
 {
     Super::BeginPlay();
-    HeroMesh=LoadObject<USkeletalMesh>(nullptr,TEXT("/Game/_Game/Art/CombatTest/Hero/SK_Hero.SK_Hero"));
+    HeroMesh=LoadObject<USkeletalMesh>(nullptr,TEXT("/Game/_Game/Art/Hero/SK_Hero.SK_Hero"));
     BossMesh=LoadObject<USkeletalMesh>(nullptr,TEXT("/Game/_Game/Art/CombatTest/Boss/SK_Boss.SK_Boss"));
     for (const TCHAR* Name : {TEXT("Idle"),TEXT("Run"),TEXT("Jump"),TEXT("Dash"),TEXT("Parry")})
-        HeroClips.Add(LoadObject<UAnimSequence>(nullptr,*FString::Printf(TEXT("/Game/_Game/Art/CombatTest/Hero/Anim_Hero_%s.Anim_Hero_%s"),Name,Name)));
+        HeroClips.Add(LoadObject<UAnimSequence>(nullptr,*FString::Printf(TEXT("/Game/_Game/Art/Hero/Anim_Hero_%s.Anim_Hero_%s"),Name,Name)));
     for (const TCHAR* Name : {TEXT("Idle"),TEXT("Combo"),TEXT("Sweep"),TEXT("Walk"),TEXT("Cast")})
         BossClips.Add(LoadObject<UAnimSequence>(nullptr,*FString::Printf(TEXT("/Game/_Game/Art/CombatTest/Boss/Anim_Boss_%s.Anim_Boss_%s"),Name,Name)));
     for (int32 I=1;I<=4;++I)

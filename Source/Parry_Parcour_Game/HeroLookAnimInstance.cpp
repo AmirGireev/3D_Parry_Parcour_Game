@@ -1,4 +1,4 @@
-#include "HeroLookAnimInstance.h"
+﻿#include "HeroLookAnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -20,7 +20,7 @@ void UHeroLookAnimInstance::NativeInitializeAnimation()
     Super::NativeInitializeAnimation();
     Clips.Reset();
     for (const TCHAR* Name : {TEXT("Idle"), TEXT("Run"), TEXT("Jump"), TEXT("Dash"), TEXT("Parry")})
-        Clips.Add(LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/_Game/Art/CombatTest/Hero/Anim_Hero_%s.Anim_Hero_%s"), Name, Name)));
+        Clips.Add(LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/_Game/Art/Hero/Anim_Hero_%s.Anim_Hero_%s"), Name, Name)));
     PlayClip(Clips[Idle], true);
 }
 

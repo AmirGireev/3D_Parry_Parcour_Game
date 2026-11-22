@@ -97,7 +97,7 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Parry-Kugel (ParryVisual) ist im Spiel unsichtbar (Hidden in Game).
 - Nahkämpfer nutzt ABP_Manny_Combat und greift zufällig mit Heavy Attack
   (AM_ChargedAttack, 1 Treffer) oder Combo (AM_ComboAttack, 3 Treffer) aus
-  Variant_Combat an. Fernkämpfer schießt zwei Projektile hintereinander auf
+  _Game/Enemies/Anims an (ursprünglich aus Variant_Combat). Fernkämpfer schießt zwei Projektile hintereinander auf
   derselben Bahn (einmal zielen, gleicher Startpunkt), Projektile folgen dem
   Spieler leicht (Homing 1200) und leben nur 3 s.
 - Combo-Parry: Jeder Angriff hat eine Trefferzahl (Combo 3, Heavy 1,
@@ -112,8 +112,13 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   FlashRed → Delay 0,1. Overlay-Materialien brauchen „Used with Skeletal Mesh“.
 - Gegner blockieren die Kamera nicht (BP_EnemyBase IgnoreCamera bei BeginPlay:
   alle Kollisionen ignorieren den Kamera-Kanal).
-- Spielfigur: Paragon Gideon (Scale 0,85, kleiner als die Gegner) mit seinem
-  eigenen Animation Blueprint, Portal-Ring und Start-Animation ausgeblendet.
+- Spielfigur: SK_Hero aus dem Kampf-Prototyp (_Game/Art/Hero, Mesh-Scale 1,8,
+  füllt die Kapsel) mit C++-Animklasse HeroLookAnimInstance (Idle/Run/Jump/
+  Dash/Parry-Clips). Gideon ist entfernt.
+- Ordner: VFX = _Game/VFX, Grid-/Glow-Materialien = _Game/Art/Prototype,
+  PlayerController = _Game/Core/BP_ThirdPersonPlayerController. Nichts in
+  _Game darf auf Packages außerhalb von _Game zeigen (C++ lädt Pfade fest:
+  SwordCombatTest, HeroLookAnimInstance – bei Verschiebungen mit anpassen).
 - Dash bewegt die Figur im Flying-Modus (keine Sprung-/Landeanimation), ohne
   Dash-Animation und ohne FOV-Änderung.
 - Lock-On (Universal Lock-On, mittlere Maustaste) als Soft Lock: Ziel wird
@@ -136,7 +141,7 @@ Entlang +X: Spawn-Raum (−1200..1200, Boden 0, Wände 500 hoch, Ausgang vorne)
 → Weg mit Deckung und Fernkämpfer (x 3700) → Parkour 1 (Plattformen 50/150/
 250, Balken) → Nahkämpfer-Plattform (x 7400..9400, Höhe 300) → Parkour 2
 (400/500/600, Säule 700) → Boss-Arena (x 12200..15200, Höhe 650, Wände,
-Turm als Boss-Platzhalter, Scale 2). Grau/Dunkel = LevelPrototyping-Grids.
+Turm als Boss-Platzhalter, Scale 2). Grau/Dunkel = Grid-Materialien aus _Game/Art/Prototype.
 Fall-Trigger (TriggerBox bei z −900) lädt das Level neu. Nach Umbauten:
 „RebuildNavigation“ und Level über File → Save Current Level speichern
 (Speichern per MCP sichert die einzelnen Actor-Dateien nicht).
