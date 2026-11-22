@@ -14,6 +14,9 @@ public:
     UPROPERTY(Transient) bool bLoop = true;
     UPROPERTY(Transient) int32 Revision = 0;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat test") FVector GuardDirection = FVector(-.65,.35,.7);
+    /** When true, upper arms are rotated down so they never point higher than ArmMaxElevation (degrees, negative = below horizontal). */
+    UPROPERTY(Transient) bool bLimitArms = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Arms") float ArmMaxElevation = -25.f;
     void PlayClip(UAnimSequence* InClip, bool Loop = true, float PlayRate = 1.f, bool Restart = false);
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;

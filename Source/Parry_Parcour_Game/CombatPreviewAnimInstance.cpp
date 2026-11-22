@@ -11,6 +11,35 @@ struct FCombatPreviewNode : FAnimNode_Base
     float Rate = 1.f, Blend = 1.f;
     bool Loop = true, Pending = false, HasPrevious = false;
     FVector GuardDirection=FVector(-.65,.35,.7);
+    bool LimitArms=false;
+    float ArmMaxElevation=-25.f;
+    void LowerArms(FPoseContext& Out)
+    {
+        if (!LimitArms) return;
+        const FBoneContainer& Bones=Out.Pose.GetBoneContainer();
+        const FReferenceSkeleton& Ref=Bones.GetReferenceSkeleton();
+        FCSPose<FCompactPose> CS;
+        CS.InitPose(Out.Pose);
+        const float MaxRad=FMath::DegreesToRadians(ArmMaxElevation);
+        for (const TCHAR* Side : {TEXT("_l"), TEXT("_r")})
+        {
+            const int32 UpperRef=Ref.FindBoneIndex(FName(FString(TEXT("upperarm"))+Side));
+            const int32 LowerRef=Ref.FindBoneIndex(FName(FString(TEXT("lowerarm"))+Side));
+            if (UpperRef==INDEX_NONE || LowerRef==INDEX_NONE) continue;
+            const FCompactPoseBoneIndex Upper=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(UpperRef));
+            const FCompactPoseBoneIndex Lower=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(LowerRef));
+            if (Upper.GetInt()==INDEX_NONE || Lower.GetInt()==INDEX_NONE) continue;
+            FTransform UpperCS=CS.GetComponentSpaceTransform(Upper);
+            const FVector Dir=(CS.GetComponentSpaceTransform(Lower).GetLocation()-UpperCS.GetLocation()).GetSafeNormal();
+            if (Dir.IsNearlyZero() || FMath::Asin(FMath::Clamp(Dir.Z,-1.f,1.f))<=MaxRad) continue;
+            FVector Flat(Dir.X,Dir.Y,0.f);
+            if (!Flat.Normalize()) continue;
+            const FVector Target=Flat*FMath::Cos(MaxRad)+FVector(0,0,FMath::Sin(MaxRad));
+            UpperCS.SetRotation(FQuat::FindBetweenNormals(Dir,Target)*UpperCS.GetRotation());
+            const FCompactPoseBoneIndex Parent=Out.Pose.GetParentBoneIndex(Upper);
+            Out.Pose[Upper]=UpperCS.GetRelativeTransform(CS.GetComponentSpaceTransform(Parent));
+        }
+    }
     void AimGuard(FPoseContext& Out)
     {
         if (!Wanted || !Wanted->GetName().Contains(TEXT("Hero_Parry"))) return;
@@ -67,13 +96,14 @@ struct FCombatPreviewNode : FAnimNode_Base
     virtual void Evaluate_AnyThread(FPoseContext& Out) override
     {
         if (!Current.GetSequence()) { Out.ResetToRefPose(); return; }
-        if (!HasPrevious || Blend >= 1.f) { Current.Evaluate_AnyThread(Out); AimGuard(Out); return; }
+        if (!HasPrevious || Blend >= 1.f) { Current.Evaluate_AnyThread(Out); AimGuard(Out); LowerArms(Out); return; }
         FPoseContext A(Out), B(Out);
         Previous.Evaluate_AnyThread(A);
         Current.Evaluate_AnyThread(B);
         FAnimationPoseData AD(A), BD(B), OD(Out);
         FAnimationRuntime::BlendTwoPosesTogether(AD, BD, 1.f-Blend, OD);
         AimGuard(Out);
+        LowerArms(Out);
     }
 };
 
@@ -90,6 +120,8 @@ struct FCombatPreviewProxy : FAnimInstanceProxy
         Node.Rate = Anim->Rate;
         Node.Loop = Anim->bLoop;
         Node.GuardDirection=Anim->GuardDirection;
+        Node.LimitArms=Anim->bLimitArms;
+        Node.ArmMaxElevation=Anim->ArmMaxElevation;
         if (SeenRevision != Anim->Revision)
         {
             Node.Wanted = Anim->Clip;

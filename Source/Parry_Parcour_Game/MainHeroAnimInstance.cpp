@@ -38,4 +38,6 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         else PlayClip(Clips[Run], true, RunRate);
     }
     bWasFalling = bFalling;
+    // Keep the arms below shoulder height while the jump clip plays.
+    bLimitArms = bFalling;
 }
