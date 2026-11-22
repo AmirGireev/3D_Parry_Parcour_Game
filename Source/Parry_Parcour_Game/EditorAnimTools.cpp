@@ -125,6 +125,48 @@ static void ClampPelvis(const TArray<FString>& Args)
     UE_LOG(LogTemp, Display, TEXT("ParryAnim CLAMP %s keys=%d changed=%d ok=%d"), *Seq->GetName(), Keys, Changed, bOk ? 1 : 0);
 }
 
+// Parry.InPlace <AnimPath>: removes the baked forward travel of the pelvis (linear drift in X/Y from first
+// to last key), keeps the per-frame sway. Logs the drift it removed.
+static void InPlace(const TArray<FString>& Args)
+{
+    if (Args.Num() < 1) { UE_LOG(LogTemp, Error, TEXT("ParryAnim: Parry.InPlace <AnimPath>")); return; }
+    UAnimSequence* Seq = LoadAnim(Args[0]);
+    if (!Seq || !Seq->GetSkeleton()) return;
+    const IAnimationDataModel* Model = Seq->GetDataModel();
+    const FReferenceSkeleton& Ref = Seq->GetSkeleton()->GetReferenceSkeleton();
+    const FName PelvisBone = PelvisName(Ref);
+    const int32 Pelvis = Ref.FindBoneIndex(PelvisBone);
+    if (Pelvis == INDEX_NONE || !Model->IsValidBoneTrackName(PelvisBone)) { UE_LOG(LogTemp, Error, TEXT("ParryAnim: no pelvis track")); return; }
+    const int32 Parent = Ref.GetParentIndex(Pelvis);
+    const int32 Keys = Model->GetNumberOfKeys();
+    if (Keys < 2) return;
+    TArray<FTransform> Local, ParentCS, PelvisCS;
+    for (int32 K = 0; K < Keys; ++K)
+    {
+        const FFrameNumber N(K);
+        Local.Add(Model->GetBoneTrackTransform(PelvisBone, N));
+        ParentCS.Add(Parent != INDEX_NONE ? ComponentTransform(Model, Ref, Parent, N) : FTransform::Identity);
+        PelvisCS.Add(Local.Last() * ParentCS.Last());
+    }
+    FVector Drift = PelvisCS.Last().GetLocation() - PelvisCS[0].GetLocation();
+    Drift.Z = 0.f;
+    TArray<FVector> Pos; TArray<FQuat> Rot; TArray<FVector> Scale;
+    for (int32 K = 0; K < Keys; ++K)
+    {
+        FTransform CS = PelvisCS[K];
+        CS.SetLocation(CS.GetLocation() - Drift * (float(K) / float(Keys - 1)));
+        const FTransform NewLocal = CS.GetRelativeTransform(ParentCS[K]);
+        Pos.Add(NewLocal.GetLocation()); Rot.Add(NewLocal.GetRotation()); Scale.Add(NewLocal.GetScale3D());
+    }
+    IAnimationDataController& Controller = Seq->GetController();
+    Controller.OpenBracket(FText::FromString(TEXT("Remove forward drift")));
+    const bool bOk = Controller.SetBoneTrackKeys(PelvisBone, Pos, Rot, Scale);
+    Controller.CloseBracket();
+    Seq->MarkPackageDirty();
+    UE_LOG(LogTemp, Display, TEXT("ParryAnim INPLACE %s drift=(%.4f, %.4f) ok=%d"), *Seq->GetName(), Drift.X, Drift.Y, bOk ? 1 : 0);
+}
+
+static FAutoConsoleCommand InPlaceCmd(TEXT("Parry.InPlace"), TEXT("Removes baked forward travel of the pelvis."), FConsoleCommandWithArgsDelegate::CreateStatic(&InPlace));
 static FAutoConsoleCommand ClampCmd(TEXT("Parry.ClampPelvis"), TEXT("Pelvis never higher than MaxZ (removes baked jump height)."), FConsoleCommandWithArgsDelegate::CreateStatic(&ClampPelvis));
 static FAutoConsoleCommand InfoCmd(TEXT("Parry.AnimInfo"), TEXT("Logs pelvis/foot height per frame of an animation."), FConsoleCommandWithArgsDelegate::CreateStatic(&AnimInfo));
 static FAutoConsoleCommand TrimCmd(TEXT("Parry.TrimAnim"), TEXT("Keeps only [Start, End] seconds of an animation."), FConsoleCommandWithArgsDelegate::CreateStatic(&TrimAnim));
