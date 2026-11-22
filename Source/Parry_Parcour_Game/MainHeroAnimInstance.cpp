@@ -67,7 +67,20 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     {
         if (bDoubleJump) PlayClip(Clips[DoubleJump], false, DoubleJumpRate, bStartDoubleJump);
         else if (Clock - AirStart < StartLength) PlayClip(Clips[JumpStart], false, JumpStartRate, Clock == AirStart);
-        else PlayClip(Clips[Fall], true, FallRate);
+        else if (Clips[Fall])
+        {
+            // Ping-pong: play forward to the end, then backward to the start, and so on until landing.
+            const float Length = Clips[Fall]->GetPlayLength();
+            const bool bEnterFall = Clips[Fall] != Clip;
+            if (bEnterFall) { FallTime = 0.f; FallDir = 1.f; }
+            else
+            {
+                FallTime += DeltaSeconds * FallRate * FallDir;
+                if (FallTime >= Length) { FallTime = Length; FallDir = -1.f; }
+                else if (FallTime <= 0.f) { FallTime = 0.f; FallDir = 1.f; }
+            }
+            PlayClip(Clips[Fall], false, FallRate * FallDir, bEnterFall);
+        }
     }
     else if (bLanding)
     {

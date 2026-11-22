@@ -23,7 +23,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float FallRate = 1.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandRate = 1.f;
     /** Landing is cut short once the player moves again after this many seconds. */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandMinTime = .12f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandMinTime = .24f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float DoubleJumpRate = 2.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float DashRate = 1.5f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float ParryRate = 1.f;
@@ -36,5 +36,6 @@ private:
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> Clips;
     bool bWasFalling = false, bDoubleJump = false, bWasParrying = false;
     int32 LastJumpCount = 0;
+    float FallTime = 0.f, FallDir = 1.f;
     float Clock = 0.f, ParryUntil = -1.f, AirStart = 0.f, LandStart = -10.f, StartLength = 0.f, LandLength = 0.f;
 };
