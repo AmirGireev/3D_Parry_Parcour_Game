@@ -129,7 +129,12 @@ void ASwordCombatTest::InitializeFighters()
         if (C->GetClass()->GetName().Contains(TEXT("AC_Health")))
         {
             for (FName N : {FName("MaxHealth"),FName("Health")})
-                if (auto* P=FindFProperty<FFloatProperty>(C->GetClass(),N)) P->SetPropertyValue_InContainer(C,40.f);
+                if (auto* P=FindFProperty<FNumericProperty>(C->GetClass(),N))
+                {
+                    void* Value=P->ContainerPtrToValuePtr<void>(C);
+                    if (P->IsFloatingPoint()) P->SetFloatingPointPropertyValue(Value,40.0);
+                    else P->SetIntPropertyValue(Value,int64(40));
+                }
         }
         if (auto* Scene=Cast<USceneComponent>(C); Scene && C->GetName().Contains(TEXT("AttackWarning"))) Scene->SetRelativeLocation(FVector(0,0,195));
     }
