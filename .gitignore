@@ -75,3 +75,12 @@ Config/DefaultEditorPerProjectUserSettings.ini.user
 # Großes Fab-Paket, nur lokal (nicht ins Git)
 Content/ParagonSparrow/
 Content/ParagonGideon/
+
+# Fab-Pakete/Demo-Inhalte, vom Spiel nicht genutzt (nur lokal)
+Content/UniversalLockOnPackage/
+Content/__ExternalActors__/UniversalLockOnPackage/
+Content/__ExternalObjects__/UniversalLockOnPackage/
+Content/__ExternalActors__/LocomotionAnimPack/
+Content/__ExternalObjects__/LocomotionAnimPack/
+# Von Unreal erzeugte Plattform-Ordner
+Platforms/
