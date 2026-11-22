@@ -43,7 +43,7 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     const bool bStartDoubleJump = bFalling && JumpCount >= 2 && JumpCount > LastJumpCount;
     if (bStartDoubleJump) { bDoubleJump = true; DoubleJumpStart = Clock; }
     // The backflip plays once (its own Rate Scale included), afterwards the normal fall takes over.
-    const float FlipLength = Clips[DoubleJump] ? Clips[DoubleJump]->GetPlayLength() / FMath::Max(.01f, DoubleJumpRate * Clips[DoubleJump]->RateScale) : 0.f;
+    const float FlipLength = Clips[DoubleJump] ? Clips[DoubleJump]->GetPlayLength() / FMath::Max(.01f, FMath::Abs(DoubleJumpRate * Clips[DoubleJump]->RateScale)) : 0.f;
     const bool bFlipping = bDoubleJump && Clock - DoubleJumpStart < FlipLength;
     LastJumpCount = JumpCount;
 
@@ -68,7 +68,7 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     }
     else if (bFalling)
     {
-        if (bFlipping) PlayClip(Clips[DoubleJump], false, -DoubleJumpRate, bStartDoubleJump); // played backwards
+        if (bFlipping) PlayClip(Clips[DoubleJump], false, DoubleJumpRate, bStartDoubleJump); // negative Rate Scale on the clip = backwards
         else if (!bDoubleJump && Clock - AirStart < StartLength) PlayClip(Clips[JumpStart], false, JumpStartRate, Clock == AirStart);
         else if (Clips[Fall])
         {
