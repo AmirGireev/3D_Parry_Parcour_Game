@@ -66,9 +66,10 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
 - Kette: Sind nach einem Counter-Dash noch Gegner markiert, löst Linksklick
   innerhalb von 1 s den nächsten Counter-Dash zum nächsten markierten Gegner aus.
 - Parry: 0,75 s Zeitlupe (Faktor 0,2), Counter-Dash beendet sie sofort.
-- Counter-Dash fliegt in 3D auf die Körpermitte des Ziels (Kapselmitte +
-  0,4 × halbe Kapselhöhe, CounterAimHeight; ohne Kapsel z. B. Turm: Mitte der
-  Kollisions-Bounds) und 250 darüber hinaus. Das Ziel bekommt am Ende des
+- Counter-Dash fliegt in 3D auf einen Punkt fast ganz unten am Ziel: Fußhöhe
+  des Ziels + eigene halbe Kapselhöhe + CounterAimOffset (10), so bleibt man
+  auf Bodenhöhe des Gegners (ohne Kapsel z. B. Turm: Mitte der
+  Kollisions-Bounds) und fliegt 250 darüber hinaus. Das Ziel bekommt am Ende des
   Counter-Dashs garantiert Schaden, falls die Berührung ausgefallen ist.
 - Bewegung: Sprung und Dash in Eingaberichtung, Coyote-Time 0,15 s,
   Laufen 900, Jump Z 1000, Gravity 2,8. Nach dem Dash bleibt Schwung
