@@ -112,9 +112,9 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   FlashRed → Delay 0,1. Overlay-Materialien brauchen „Used with Skeletal Mesh“.
 - Gegner blockieren die Kamera nicht (BP_EnemyBase IgnoreCamera bei BeginPlay:
   alle Kollisionen ignorieren den Kamera-Kanal).
-- Spielfigur: SK_Hero aus dem Kampf-Prototyp (_Game/Art/Hero, Mesh-Scale 1,8,
-  füllt die Kapsel) mit C++-Animklasse HeroLookAnimInstance (Idle/Run/Jump/
-  Dash/Parry-Clips). Gideon ist entfernt.
+- Spielfigur: Fuchs-Krieger SK_Main (_Game/Art/Main, Mesh-Scale 105,9, weil die
+  FBX in Metern kommt) mit C++-Animklasse MainHeroAnimInstance (Idle/Walk/Run/
+  Jump aus Art/Main/Anims). HeroLookAnimInstance/SK_Hero nur noch Kampf-Prototyp.
 - Ordner: VFX = _Game/VFX, Grid-/Glow-Materialien = _Game/Art/Prototype,
   PlayerController = _Game/Core/BP_ThirdPersonPlayerController. Nichts in
   _Game darf auf Packages außerhalb von _Game zeigen (C++ lädt Pfade fest:
