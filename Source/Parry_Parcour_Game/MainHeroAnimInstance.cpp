@@ -6,7 +6,7 @@
 
 namespace
 {
-enum EClip { Idle, Walk, Run, Jump, DoubleJump, Dash, Parry, Count };
+enum EClip { Idle, Walk, Run, JumpStart, Fall, Land, DoubleJump, Dash, Parry, Count };
 
 bool ReadBool(const UObject* Owner, FName Name)
 {
@@ -19,7 +19,7 @@ void UMainHeroAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
     Clips.Reset();
-    for (const TCHAR* Name : {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("Jump"), TEXT("DoubleJump"), TEXT("Dash"), TEXT("Parry")})
+    for (const TCHAR* Name : {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("JumpStart"), TEXT("Fall"), TEXT("Land"), TEXT("DoubleJump"), TEXT("Dash"), TEXT("Parry")})
         Clips.Add(LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/_Game/Art/Main/Anims/Anim_Main_%s.Anim_Main_%s"), Name, Name)));
     OverlayRoot = TEXT("spine_01");
     PlayClip(Clips[Idle], true);
@@ -35,6 +35,7 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     const UCharacterMovementComponent* Move = Hero->GetCharacterMovement();
     const bool bFalling = Move && Move->IsFalling();
     const bool bDashing = ReadBool(Hero, TEXT("bIsDashing"));
+    const float Speed = Hero->GetVelocity().Size2D();
 
     // Second jump in the air (Character jump count goes up while falling) -> backflip until landing.
     const int32 JumpCount = Hero->JumpCurrentCount;
@@ -43,6 +44,21 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     if (bStartDoubleJump) bDoubleJump = true;
     LastJumpCount = JumpCount;
 
+    // Leaving the ground: jump start when going up, straight into the fall loop when walking off a ledge.
+    if (bFalling && !bWasFalling)
+    {
+        AirStart = Clock;
+        StartLength = (Hero->GetVelocity().Z > 100.f && Clips[JumpStart]) ? Clips[JumpStart]->GetPlayLength() / FMath::Max(.01f, JumpStartRate) : 0.f;
+    }
+    // Touching down after a real fall: landing clip.
+    if (!bFalling && bWasFalling && !bDashing)
+    {
+        LandStart = Clock;
+        LandLength = Clips[Land] ? Clips[Land]->GetPlayLength() / FMath::Max(.01f, LandRate) : 0.f;
+    }
+
+    const bool bLanding = !bFalling && Clock - LandStart < LandLength && !(Speed > IdleSpeed && Clock - LandStart > LandMinTime);
+
     if (bDashing)
     {
         PlayClip(Clips[Dash], true, DashRate);
@@ -50,11 +66,15 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     else if (bFalling)
     {
         if (bDoubleJump) PlayClip(Clips[DoubleJump], false, DoubleJumpRate, bStartDoubleJump);
-        else PlayClip(Clips[Jump], false, JumpRate, !bWasFalling);
+        else if (Clock - AirStart < StartLength) PlayClip(Clips[JumpStart], false, JumpStartRate, Clock == AirStart);
+        else PlayClip(Clips[Fall], true, FallRate);
+    }
+    else if (bLanding)
+    {
+        PlayClip(Clips[Land], false, LandRate, Clock == LandStart);
     }
     else
     {
-        const float Speed = Hero->GetVelocity().Size2D();
         if (Speed <= IdleSpeed) PlayClip(Clips[Idle], true);
         else if (Speed < RunSpeed) PlayClip(Clips[Walk], true, WalkRate);
         else PlayClip(Clips[Run], true, RunRate);

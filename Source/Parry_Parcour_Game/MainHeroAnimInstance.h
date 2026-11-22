@@ -6,9 +6,9 @@
 class UAnimSequence;
 
 /**
- * Main character (Art/Main): idle, walk, run by ground speed, jump in the air,
- * backflip on the double jump, lean-forward sprint while dashing and an
- * upper-body parry pose on top of whatever the legs are doing.
+ * Main character (Art/Main): idle, walk, run by ground speed; jump split into
+ * start -> looping fall -> landing; backflip on the double jump; lean-forward
+ * sprint while dashing; upper-body parry pose on top of whatever the legs do.
  */
 UCLASS()
 class PARRY_PARCOUR_GAME_API UMainHeroAnimInstance : public UCombatPreviewAnimInstance
@@ -19,7 +19,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float RunSpeed = 450.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float WalkRate = 1.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float RunRate = 1.f;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float JumpRate = 1.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float JumpStartRate = 1.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float FallRate = 1.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandRate = 1.f;
+    /** Landing is cut short once the player moves again after this many seconds. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float LandMinTime = .12f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float DoubleJumpRate = 2.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float DashRate = 1.5f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float ParryRate = 1.f;
@@ -32,5 +36,5 @@ private:
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> Clips;
     bool bWasFalling = false, bDoubleJump = false, bWasParrying = false;
     int32 LastJumpCount = 0;
-    float Clock = 0.f, ParryUntil = -1.f;
+    float Clock = 0.f, ParryUntil = -1.f, AirStart = 0.f, LandStart = -10.f, StartLength = 0.f, LandLength = 0.f;
 };
