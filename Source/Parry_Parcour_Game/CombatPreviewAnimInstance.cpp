@@ -12,7 +12,7 @@ struct FCombatPreviewNode : FAnimNode_Base
     bool Loop = true, Pending = false, HasPrevious = false;
     FVector GuardDirection=FVector(-.65,.35,.7);
     bool LimitArms=false;
-    float ArmMaxElevation=-25.f;
+    float ArmMaxElevation=-45.f;
     void LowerArms(FPoseContext& Out)
     {
         if (!LimitArms) return;
@@ -21,10 +21,14 @@ struct FCombatPreviewNode : FAnimNode_Base
         FCSPose<FCompactPose> CS;
         CS.InitPose(Out.Pose);
         const float MaxRad=FMath::DegreesToRadians(ArmMaxElevation);
-        for (const TCHAR* Side : {TEXT("_l"), TEXT("_r")})
+        // UE mannequin names (upperarm_l / lowerarm_l) or Mixamo names (LeftArm / LeftForeArm).
+        static const TCHAR* ArmBones[][2] = {
+            {TEXT("upperarm_l"), TEXT("lowerarm_l")}, {TEXT("upperarm_r"), TEXT("lowerarm_r")},
+            {TEXT("LeftArm"), TEXT("LeftForeArm")}, {TEXT("RightArm"), TEXT("RightForeArm")}};
+        for (const auto& Pair : ArmBones)
         {
-            const int32 UpperRef=Ref.FindBoneIndex(FName(FString(TEXT("upperarm"))+Side));
-            const int32 LowerRef=Ref.FindBoneIndex(FName(FString(TEXT("lowerarm"))+Side));
+            const int32 UpperRef=Ref.FindBoneIndex(FName(Pair[0]));
+            const int32 LowerRef=Ref.FindBoneIndex(FName(Pair[1]));
             if (UpperRef==INDEX_NONE || LowerRef==INDEX_NONE) continue;
             const FCompactPoseBoneIndex Upper=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(UpperRef));
             const FCompactPoseBoneIndex Lower=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(LowerRef));
@@ -108,7 +112,9 @@ struct FCombatPreviewNode : FAnimNode_Base
             Current.SetSequence(Wanted);
             Current.SetLoopAnimation(Loop);
             Current.SetPlayRate(Rate);
-            Current.SetStartPosition(0.f);
+            // Negative rate = play backwards, so start at the end of the clip.
+            // (also when the clip's own Rate Scale is negative)
+            Current.SetStartPosition(Wanted && Rate * Wanted->RateScale < 0.f ? Wanted->GetPlayLength() : 0.f);
             Current.Initialize_AnyThread(FAnimationInitializeContext(C.AnimInstanceProxy));
             Current.CacheBones_AnyThread(FAnimationCacheBonesContext(C.AnimInstanceProxy));
             Blend = HasPrevious ? 0.f : 1.f;

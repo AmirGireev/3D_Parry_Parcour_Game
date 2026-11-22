@@ -1,4 +1,4 @@
-﻿# Projekt: Parry-Dash-Game (Unreal Engine 5.8, Blueprint)
+# Projekt: Parry-Dash-Game (Unreal Engine 5.8, Blueprint)
 
 ## Ziel
 3D-Parry-Parkour-Spiel. Kern: Parry → kurze Zeitlupe → Counter-Dash
@@ -112,9 +112,11 @@ erst nachfragen. Details und Werte stehen in PROGRESS.md.
   FlashRed → Delay 0,1. Overlay-Materialien brauchen „Used with Skeletal Mesh“.
 - Gegner blockieren die Kamera nicht (BP_EnemyBase IgnoreCamera bei BeginPlay:
   alle Kollisionen ignorieren den Kamera-Kanal).
-- Spielfigur: Fuchs-Krieger SK_Main (_Game/Art/Main, Mesh-Scale 105,9, weil die
-  FBX in Metern kommt) mit C++-Animklasse MainHeroAnimInstance (Idle/Walk/Run/
-  Jump aus Art/Main/Anims). HeroLookAnimInstance/SK_Hero nur noch Kampf-Prototyp.
+- Spielfigur: Fuchs-Krieger mit Mixamo-Rig (Mesh Meshy_..._remesh_tri in
+  _Game/Art/Main/Anims, Mesh-Scale 94,7, Z −90, Yaw 270) und Mixamo-Clips
+  Anim_Main_* (Idle/Walk/Run/JumpStart/Fall/Land/DoubleJump/Dash/Parry) mit
+  C++-Animklasse MainHeroAnimInstance. Knochen: Mixamo-Namen (Hips, Spine,
+  LeftArm …); Code kann beide Namensschemata. SK_Main = alte Meshy-Figur.
 - Ordner: VFX = _Game/VFX, Grid-/Glow-Materialien = _Game/Art/Prototype,
   PlayerController = _Game/Core/BP_ThirdPersonPlayerController. Nichts in
   _Game darf auf Packages außerhalb von _Game zeigen (C++ lädt Pfade fest:

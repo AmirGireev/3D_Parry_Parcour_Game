@@ -21,7 +21,10 @@ void UMainHeroAnimInstance::NativeInitializeAnimation()
     Clips.Reset();
     for (const TCHAR* Name : {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("JumpStart"), TEXT("Fall"), TEXT("Land"), TEXT("DoubleJump"), TEXT("Dash"), TEXT("Parry")})
         Clips.Add(LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/_Game/Art/Main/Anims/Anim_Main_%s.Anim_Main_%s"), Name, Name)));
+    // Upper-body layer starts at the first spine bone (UE mannequin "spine_01", Mixamo "Spine").
     OverlayRoot = TEXT("spine_01");
+    if (const USkeletalMeshComponent* Mesh = GetSkelMeshComponent())
+        if (Mesh->GetBoneIndex(OverlayRoot) == INDEX_NONE) OverlayRoot = TEXT("Spine");
     PlayClip(Clips[Idle], true);
 }
 

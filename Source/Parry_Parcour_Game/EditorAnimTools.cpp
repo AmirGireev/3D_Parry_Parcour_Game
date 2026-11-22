@@ -21,6 +21,12 @@ static UAnimSequence* LoadAnim(const FString& Path)
     return Seq;
 }
 
+// UE mannequin "pelvis" or Mixamo "Hips".
+static FName PelvisName(const FReferenceSkeleton& Ref)
+{
+    return Ref.FindBoneIndex(TEXT("pelvis")) != INDEX_NONE ? FName(TEXT("pelvis")) : FName(TEXT("Hips"));
+}
+
 static FTransform ComponentTransform(const IAnimationDataModel* Model, const FReferenceSkeleton& Ref, int32 Bone, const FFrameNumber& Frame)
 {
     FTransform Result = FTransform::Identity;
@@ -41,7 +47,10 @@ static void AnimInfo(const TArray<FString>& Args)
     if (!Seq || !Seq->GetSkeleton()) return;
     const IAnimationDataModel* Model = Seq->GetDataModel();
     const FReferenceSkeleton& Ref = Seq->GetSkeleton()->GetReferenceSkeleton();
-    const int32 Pelvis = Ref.FindBoneIndex(TEXT("pelvis")), FootL = Ref.FindBoneIndex(TEXT("foot_l")), FootR = Ref.FindBoneIndex(TEXT("foot_r"));
+    const int32 Pelvis = Ref.FindBoneIndex(PelvisName(Ref));
+    int32 FootL = Ref.FindBoneIndex(TEXT("foot_l")), FootR = Ref.FindBoneIndex(TEXT("foot_r"));
+    if (FootL == INDEX_NONE) FootL = Ref.FindBoneIndex(TEXT("LeftFoot"));
+    if (FootR == INDEX_NONE) FootR = Ref.FindBoneIndex(TEXT("RightFoot"));
     const FFrameRate Rate = Model->GetFrameRate();
     const int32 Frames = Model->GetNumberOfFrames();
     UE_LOG(LogTemp, Display, TEXT("ParryAnim INFO %s frames=%d rate=%s length=%.3f"), *Seq->GetName(), Frames, *Rate.ToPrettyText().ToString(), Seq->GetPlayLength());
@@ -84,8 +93,9 @@ static void ClampPelvis(const TArray<FString>& Args)
     const float MaxZ = FCString::Atof(*Args[1]);
     const IAnimationDataModel* Model = Seq->GetDataModel();
     const FReferenceSkeleton& Ref = Seq->GetSkeleton()->GetReferenceSkeleton();
-    const int32 Pelvis = Ref.FindBoneIndex(TEXT("pelvis"));
-    if (Pelvis == INDEX_NONE || !Model->IsValidBoneTrackName(TEXT("pelvis"))) { UE_LOG(LogTemp, Error, TEXT("ParryAnim: no pelvis track")); return; }
+    const FName PelvisBone = PelvisName(Ref);
+    const int32 Pelvis = Ref.FindBoneIndex(PelvisBone);
+    if (Pelvis == INDEX_NONE || !Model->IsValidBoneTrackName(PelvisBone)) { UE_LOG(LogTemp, Error, TEXT("ParryAnim: no pelvis track")); return; }
     const int32 Parent = Ref.GetParentIndex(Pelvis);
     const int32 Keys = Model->GetNumberOfKeys();
     TArray<FVector> Pos; TArray<FQuat> Rot; TArray<FVector> Scale;
@@ -93,7 +103,7 @@ static void ClampPelvis(const TArray<FString>& Args)
     for (int32 K = 0; K < Keys; ++K)
     {
         const FFrameNumber N(K);
-        const FTransform Local = Model->GetBoneTrackTransform(TEXT("pelvis"), N);
+        const FTransform Local = Model->GetBoneTrackTransform(PelvisBone, N);
         const FTransform ParentCS = Parent != INDEX_NONE ? ComponentTransform(Model, Ref, Parent, N) : FTransform::Identity;
         FTransform PelvisCS = Local * ParentCS;
         FVector L = PelvisCS.GetLocation();
@@ -109,7 +119,7 @@ static void ClampPelvis(const TArray<FString>& Args)
     }
     IAnimationDataController& Controller = Seq->GetController();
     Controller.OpenBracket(FText::FromString(TEXT("Clamp pelvis")));
-    const bool bOk = Controller.SetBoneTrackKeys(TEXT("pelvis"), Pos, Rot, Scale);
+    const bool bOk = Controller.SetBoneTrackKeys(PelvisBone, Pos, Rot, Scale);
     Controller.CloseBracket();
     Seq->MarkPackageDirty();
     UE_LOG(LogTemp, Display, TEXT("ParryAnim CLAMP %s keys=%d changed=%d ok=%d"), *Seq->GetName(), Keys, Changed, bOk ? 1 : 0);
