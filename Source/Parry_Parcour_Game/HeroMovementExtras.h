@@ -77,7 +77,7 @@ private:
     FVector LedgeNormal = FVector::ZeroVector;
     float LedgeTopZ = 0.f;
     FVector ClimbFrom = FVector::ZeroVector, ClimbTo = FVector::ZeroVector;
-    FVector MeshRelative = FVector::ZeroVector, MeshWorldDuringClimb = FVector::ZeroVector;
+    FVector MeshRelative = FVector::ZeroVector, MeshWorldDuringClimb = FVector::ZeroVector, StandFixOffset = FVector::ZeroVector;
     float ReleasedAt = -100.f;
 };
 

@@ -162,10 +162,19 @@ static void InPlace(const TArray<FString>& Args)
     for (int32 I = 1; I < Args.Num(); ++I) { bZ |= Args[I].Equals(TEXT("z"), ESearchCase::IgnoreCase); bYaw |= Args[I].Equals(TEXT("yaw"), ESearchCase::IgnoreCase); }
     FVector Drift = PelvisCS.Last().GetLocation() - PelvisCS[0].GetLocation();
     if (!bZ) Drift.Z = 0.f;
+    FVector ConstOffset = FVector::ZeroVector;
+    // With an offset the clip is only moved, its own travel is kept unless asked otherwise.
+    for (int32 I = 1; I < Args.Num(); ++I) if (Args[I].StartsWith(TEXT("offset="), ESearchCase::IgnoreCase)) Drift = FVector::ZeroVector;
     // "addz=<units>" removes this much extra height over the clip (e.g. to match how far the capsule climbs).
     for (int32 I = 1; I < Args.Num(); ++I)
     {
         if (Args[I].StartsWith(TEXT("addz="), ESearchCase::IgnoreCase)) Drift.Z += FCString::Atof(*Args[I].Mid(5));
+        // "offset=x,y,z" moves the whole clip by a constant amount (to line clips up with each other).
+        if (Args[I].StartsWith(TEXT("offset="), ESearchCase::IgnoreCase))
+        {
+            TArray<FString> P; Args[I].Mid(7).ParseIntoArray(P, TEXT(","));
+            if (P.Num() == 3) ConstOffset = FVector(FCString::Atof(*P[0]), FCString::Atof(*P[1]), FCString::Atof(*P[2]));
+        }
         // "add=x,y,z" removes this extra linear travel (negative values put travel back in).
         if (Args[I].StartsWith(TEXT("add="), ESearchCase::IgnoreCase))
         {
@@ -181,7 +190,7 @@ static void InPlace(const TArray<FString>& Args)
     {
         FTransform CS = PelvisCS[K];
         const float Alpha = float(K) / float(Keys - 1);
-        CS.SetLocation(CS.GetLocation() - Drift * Alpha);
+        CS.SetLocation(CS.GetLocation() - Drift * Alpha + ConstOffset);
         if (bYaw)
         {
             // Rotate pelvis back around the vertical axis (through its first-frame position).

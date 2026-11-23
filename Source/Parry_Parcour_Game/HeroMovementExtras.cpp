@@ -151,25 +151,17 @@ void UHeroMovementExtras::TickHanging(float Dt)
     ACharacter* H = Hero();
     UCharacterMovementComponent* Move = H->GetCharacterMovement();
     // Something else took over movement (dash, knockback ...): let go.
-    if (!Move || Move->MovementMode != MOVE_None) { if (LedgeState == EHeroLedgeState::Grabbing && H->GetMesh()) H->GetMesh()->SetRelativeLocation(MeshRelative); ShimmyDir = 0.f; ReleasedAt = GetWorld()->GetTimeSeconds(); SetState(EHeroLedgeState::None); return; }
+    if (!Move || Move->MovementMode != MOVE_None) { ShimmyDir = 0.f; ReleasedAt = GetWorld()->GetTimeSeconds(); SetState(EHeroLedgeState::None); return; }
     Move->Velocity = FVector::ZeroVector;
     // This component ticks before the movement component, so this frame's input is still pending.
     FVector Input = H->GetPendingMovementInputVector();
     if (Input.IsNearlyZero()) Input = H->GetLastMovementInputVector();
     const bool bJump = H->bPressedJump;
     H->bPressedJump = false;
-    // While the grab animation plays, only hang. The grab clip ends with the hands 168 cm up and 115 cm in front
-    // of its origin, the hang clip has them 234 cm up and 30 cm in front: shift the mesh so the hands stay on the ledge.
+    // While the grab animation plays, only hang (the grab clip is lined up with the hang clip, no mesh shift needed).
     if (LedgeState == EHeroLedgeState::Grabbing)
     {
-        USkeletalMeshComponent* Mesh = H->GetMesh();
-        if (Mesh && StateTime <= Dt + KINDA_SMALL_NUMBER) MeshRelative = Mesh->GetRelativeLocation();
-        if (StateTime >= GrabTime)
-        {
-            if (Mesh) Mesh->SetRelativeLocation(MeshRelative);
-            SetState(EHeroLedgeState::Hanging);
-        }
-        else if (Mesh) Mesh->SetRelativeLocation(MeshRelative + FVector(30.f - 115.f, 0.f, 234.f - 168.f));
+        if (StateTime >= GrabTime) SetState(EHeroLedgeState::Hanging);
         return;
     }
 
@@ -243,21 +235,36 @@ void UHeroMovementExtras::TickClimb(float Dt)
         FVector P = FMath::Lerp(ClimbFrom, ClimbTo, OverA);
         P.Z = FMath::Lerp(ClimbFrom.Z, ClimbTo.Z, UpA);
         H->SetActorLocation(P, false, nullptr, ETeleportType::TeleportPhysics);
-        if (USkeletalMeshComponent* Mesh = H->GetMesh())
-        {
-            // The climb clip expects the ledge ClipLedgeHeight above its origin; shift the mesh (blended in) so it fits this ledge.
-            const float HalfHeight = H->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-            const float Fix = (HangBelowLedge + HalfHeight) - ClipLedgeHeight;
-            Mesh->SetWorldLocation(MeshWorldDuringClimb + FVector(0, 0, Fix));
-        }
+        // The mesh stays where the hang pose was (climb clip is lined up with the hang clip).
+        if (USkeletalMeshComponent* Mesh = H->GetMesh()) Mesh->SetWorldLocation(MeshWorldDuringClimb);
         if (A >= 1.f)
         {
-            if (USkeletalMeshComponent* Mesh = H->GetMesh()) Mesh->SetRelativeLocation(MeshRelative);
+            if (USkeletalMeshComponent* Mesh = H->GetMesh())
+            {
+                // Where the pelvis ends after the climb; the stand-up clip starts with its pelvis (0.004, 0.013, 0.508)
+                // in mesh space. The difference is faded out while standing up instead of popping.
+                const FName Hips = Mesh->GetBoneIndex(TEXT("Hips")) != INDEX_NONE ? FName(TEXT("Hips")) : FName(TEXT("pelvis"));
+                const FVector EndHips = Mesh->GetBoneLocation(Hips);
+                FTransform HomeT = Mesh->GetComponentTransform();
+                HomeT.SetLocation(H->GetActorTransform().TransformPosition(MeshRelative));
+                StandFixOffset = EndHips - HomeT.TransformPosition(FVector(.0043f, .0134f, .5075f));
+            }
             SetState(EHeroLedgeState::StandUp);
         }
     }
-    else if (StateTime >= StandUpTime)
+    else if (StateTime < StandUpTime)
     {
+        // Slide the mesh back under the capsule while standing up (same time as the clip crossfade and a bit more).
+        if (USkeletalMeshComponent* Mesh = H->GetMesh())
+        {
+            const float B = FMath::Clamp(StateTime / .25f, 0.f, 1.f);
+            const FVector Home = H->GetActorTransform().TransformPosition(MeshRelative);
+            Mesh->SetWorldLocation(Home + StandFixOffset * (1.f - FMath::InterpEaseInOut(0.f, 1.f, B, 2.f)));
+        }
+    }
+    else
+    {
+        if (USkeletalMeshComponent* Mesh = H->GetMesh()) Mesh->SetRelativeLocation(MeshRelative);
         if (Move) Move->SetMovementMode(MOVE_Walking);
         ReleasedAt = GetWorld()->GetTimeSeconds();
         SetState(EHeroLedgeState::None);
