@@ -47,6 +47,51 @@ void UHeroMovementExtras::TickComponent(float DeltaTime, ELevelTick TickType, FA
     default: TickClimb(DeltaTime); break;
     }
     UpdateLockOn(DeltaTime);
+    UpdateAirRules();
+}
+
+// ---------------------------------------------------------------- air rules (jumps / dash)
+void UHeroMovementExtras::UpdateAirRules()
+{
+    ACharacter* H = Hero();
+    UCharacterMovementComponent* Move = H->GetCharacterMovement();
+    if (!Move) return;
+    const bool bOnGround = Move->IsMovingOnGround();
+    const bool bDashing = ReadBool(TEXT("bIsDashing"));
+    const bool bCounter = ReadBool(TEXT("bIsCounterDash"));
+    const float Now = GetWorld()->GetTimeSeconds();
+
+    if (bOnGround || IsOnLedge())
+    {
+        // Back on the ground (or holding a ledge): air budget refilled.
+        AirJumpsUsed = 0;
+        if (bAirDashUsed && bForcedDashCooldown && Now - LastDashStart >= DashCooldownTime)
+            if (FBoolProperty* P = FindFProperty<FBoolProperty>(H->GetClass(), TEXT("bDashOnCooldown"))) P->SetPropertyValue_InContainer(H, false);
+        bAirDashUsed = false;
+        bForcedDashCooldown = false;
+    }
+    else
+    {
+        // Every movement-mode change (the dash switches to flying and back) resets the jump counter in Unreal;
+        // keep the jumps already used in this air time.
+        AirJumpsUsed = FMath::Max(AirJumpsUsed, H->JumpCurrentCount);
+        if (H->JumpCurrentCount < AirJumpsUsed) H->JumpCurrentCount = AirJumpsUsed;
+    }
+
+    // A normal dash started in the air uses up the air dash until landing.
+    if (bDashing && !bWasDashing)
+    {
+        LastDashStart = Now;
+        if (!bWasOnGround && !bCounter) bAirDashUsed = true;
+    }
+    if (bAirDashUsed && !bOnGround)
+        if (FBoolProperty* P = FindFProperty<FBoolProperty>(H->GetClass(), TEXT("bDashOnCooldown")))
+        {
+            P->SetPropertyValue_InContainer(H, true);
+            bForcedDashCooldown = true;
+        }
+    bWasDashing = bDashing;
+    bWasOnGround = bOnGround;
 }
 
 // ---------------------------------------------------------------- lock-on strafe

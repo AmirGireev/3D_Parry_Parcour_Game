@@ -48,7 +48,9 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     // Second jump in the air (Character jump count goes up while falling) -> backflip until landing.
     const int32 JumpCount = Hero->JumpCurrentCount;
     if (!bFalling) bDoubleJump = false;
-    const bool bStartDoubleJump = bFalling && JumpCount >= 2 && JumpCount > LastJumpCount;
+    // Only a real second jump: the counter must already have been >= 1. Jumping right after walking off a ledge
+    // (coyote time) makes Unreal count the fall too, so the counter goes 0 -> 2 in one step; that is a first jump.
+    const bool bStartDoubleJump = bFalling && JumpCount >= 2 && JumpCount > LastJumpCount && LastJumpCount >= 1;
     if (bStartDoubleJump) { bDoubleJump = true; DoubleJumpStart = Clock; }
     // The backflip plays once (its own Rate Scale included), afterwards the normal fall takes over.
     const float FlipLength = Clips[DoubleJump] ? Clips[DoubleJump]->GetPlayLength() / FMath::Max(.01f, FMath::Abs(DoubleJumpRate * Clips[DoubleJump]->RateScale)) : 0.f;

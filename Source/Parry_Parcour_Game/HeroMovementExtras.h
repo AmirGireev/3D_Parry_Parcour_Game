@@ -25,6 +25,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Lock-on") float LockFaceSpeed = 12.f;
     UPROPERTY(BlueprintReadOnly, Category="Lock-on") bool bStrafing = false;
 
+    // --- Air rules ---
+    /** Must match the hero's dash cooldown; used when the air-dash lock is released on landing. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Air") float DashCooldownTime = .75f;
+
     // --- Ledge grab ---
     /** How far in front of the capsule a wall is searched. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float GrabReach = 60.f;
@@ -71,6 +75,10 @@ private:
     void TickHanging(float Dt);
     void TickClimb(float Dt);
     void SetState(EHeroLedgeState S) { LedgeState = S; StateTime = 0.f; }
+    void UpdateAirRules();
+    int32 AirJumpsUsed = 0;
+    bool bAirDashUsed = false, bForcedDashCooldown = false, bWasDashing = false, bWasOnGround = true;
+    float LastDashStart = -100.f;
 
     bool bDefaultOrientToMovement = true;
     bool bHaveDefaults = false;
