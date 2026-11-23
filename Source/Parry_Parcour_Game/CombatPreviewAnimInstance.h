@@ -13,6 +13,8 @@ public:
     UPROPERTY(Transient) float Rate = 1.f;
     UPROPERTY(Transient) bool bLoop = true;
     UPROPERTY(Transient) int32 Revision = 0;
+    /** When true, the next clip change cuts instead of crossfading (set it in the same frame as PlayClip). */
+    UPROPERTY(Transient) bool bSnapNextClip = false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat test") FVector GuardDirection = FVector(-.65,.35,.7);
     /** When true, upper arms are rotated down so they never point higher than ArmMaxElevation (degrees, negative = below horizontal). */
     UPROPERTY(Transient) bool bLimitArms = false;

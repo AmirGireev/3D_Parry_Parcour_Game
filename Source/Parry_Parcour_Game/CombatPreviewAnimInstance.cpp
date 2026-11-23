@@ -12,6 +12,7 @@ struct FCombatPreviewNode : FAnimNode_Base
     bool Loop = true, Pending = false, HasPrevious = false;
     FVector GuardDirection=FVector(-.65,.35,.7);
     bool LimitArms=false;
+    bool SnapNext=false; // next clip switch happens without crossfade
     float ArmMaxElevation=-45.f;
     void LowerArms(FPoseContext& Out)
     {
@@ -117,7 +118,7 @@ struct FCombatPreviewNode : FAnimNode_Base
             Current.SetStartPosition(Wanted && Rate * Wanted->RateScale < 0.f ? Wanted->GetPlayLength() : 0.f);
             Current.Initialize_AnyThread(FAnimationInitializeContext(C.AnimInstanceProxy));
             Current.CacheBones_AnyThread(FAnimationCacheBonesContext(C.AnimInstanceProxy));
-            Blend = HasPrevious ? 0.f : 1.f;
+            Blend = (HasPrevious && !SnapNext) ? 0.f : 1.f;
             Pending = false;
         }
         Blend = FMath::Min(1.f, Blend + C.GetDeltaTime() / .12f);
@@ -169,6 +170,7 @@ struct FCombatPreviewProxy : FAnimInstanceProxy
         auto* Anim = CastChecked<UCombatPreviewAnimInstance>(Instance);
         Node.Rate = Anim->Rate;
         Node.Loop = Anim->bLoop;
+        Node.SnapNext = Anim->bSnapNextClip;
         Node.GuardDirection=Anim->GuardDirection;
         Node.LimitArms=Anim->bLimitArms;
         Node.ArmMaxElevation=Anim->ArmMaxElevation;

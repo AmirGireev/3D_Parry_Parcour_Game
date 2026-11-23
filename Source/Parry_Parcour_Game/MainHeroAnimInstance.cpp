@@ -38,6 +38,7 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     const ACharacter* Hero = Cast<ACharacter>(TryGetPawnOwner());
     if (!Hero || Clips.Num() < Count) return;
     Clock += DeltaSeconds;
+    bSnapNextClip = false;
 
     const UCharacterMovementComponent* Move = Hero->GetCharacterMovement();
     const bool bFalling = Move && Move->IsFalling();
@@ -92,7 +93,11 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         else if (Ledge == EHeroLedgeState::ClimbUp && Clips[HangToCrouch])
             PlayClip(Clips[HangToCrouch], false, Clips[HangToCrouch]->GetPlayLength() / FMath::Max(.05f, Extras->ClimbUpTime), bNewState);
         else if (Ledge == EHeroLedgeState::StandUp && Clips[CrouchToStand])
+        {
+            // Cut (no crossfade): the mesh jumps to the stand-up position this frame, a blend would drag the climb pose along.
+            bSnapNextClip = bNewState;
             PlayClip(Clips[CrouchToStand], false, Clips[CrouchToStand]->GetPlayLength() / FMath::Max(.05f, Extras->StandUpTime), bNewState);
+        }
         LastLedge = (uint8)Ledge;
         bWasFalling = false;
         bLimitArms = false;
