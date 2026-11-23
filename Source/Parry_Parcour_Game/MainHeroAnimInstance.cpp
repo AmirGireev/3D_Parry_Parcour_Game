@@ -8,7 +8,7 @@
 namespace
 {
 enum EClip { Idle, Walk, Run, JumpStart, Fall, Land, DoubleJump, Dash, Parry,
-             TurnL, TurnR, StrafeLWalk, StrafeRWalk, StrafeLRun, StrafeRRun, HangShimmy, HangToCrouch, CrouchToStand, Count };
+             TurnL, TurnR, StrafeLWalk, StrafeRWalk, StrafeLRun, StrafeRRun, HangShimmy, HangToCrouch, CrouchToStand, JumpToHang, Count };
 
 bool ReadBool(const UObject* Owner, FName Name)
 {
@@ -23,7 +23,7 @@ void UMainHeroAnimInstance::NativeInitializeAnimation()
     Clips.Reset();
     for (const TCHAR* Name : {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("JumpStart"), TEXT("Fall"), TEXT("Land"), TEXT("DoubleJump"), TEXT("Dash"), TEXT("Parry"),
                               TEXT("TurnLeft"), TEXT("TurnRight"), TEXT("StrafeLeftWalk"), TEXT("StrafeRightWalk"), TEXT("StrafeLeftRun"), TEXT("StrafeRightRun"),
-                              TEXT("HangShimmy"), TEXT("HangToCrouch"), TEXT("CrouchToStand")})
+                              TEXT("HangShimmy"), TEXT("HangToCrouch"), TEXT("CrouchToStand"), TEXT("JumpToHang")})
         Clips.Add(LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/_Game/Art/Main/Anims/Anim_Main_%s.Anim_Main_%s"), Name, Name)));
     // Upper-body layer starts at the first spine bone (UE mannequin "spine_01", Mixamo "Spine").
     OverlayRoot = TEXT("spine_01");
@@ -81,7 +81,9 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     if (Ledge != EHeroLedgeState::None)
     {
         const bool bNewState = (uint8)Ledge != LastLedge;
-        if (Ledge == EHeroLedgeState::Hanging)
+        if (Ledge == EHeroLedgeState::Grabbing && Clips[JumpToHang])
+            PlayClip(Clips[JumpToHang], false, Clips[JumpToHang]->GetPlayLength() / FMath::Max(.05f, Extras->GrabTime), bNewState);
+        else if (Ledge == EHeroLedgeState::Hanging)
         {
             // Shimmy clip forwards for one side, backwards for the other; frozen while hanging still.
             const float Dir = Extras->ShimmyDir;

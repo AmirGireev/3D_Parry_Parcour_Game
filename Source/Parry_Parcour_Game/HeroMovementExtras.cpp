@@ -42,6 +42,7 @@ void UHeroMovementExtras::TickComponent(float DeltaTime, ELevelTick TickType, FA
     switch (LedgeState)
     {
     case EHeroLedgeState::None: TryGrab(); break;
+    case EHeroLedgeState::Grabbing:
     case EHeroLedgeState::Hanging: TickHanging(DeltaTime); break;
     default: TickClimb(DeltaTime); break;
     }
@@ -131,7 +132,7 @@ void UHeroMovementExtras::TryGrab()
     H->SetActorLocation(Hang, false, nullptr, ETeleportType::TeleportPhysics);
     H->SetActorRotation(FRotator(0.f, (-N).Rotation().Yaw, 0.f));
     ShimmyDir = 0.f;
-    SetState(EHeroLedgeState::Hanging);
+    SetState(GrabTime > 0.f ? EHeroLedgeState::Grabbing : EHeroLedgeState::Hanging);
 }
 
 void UHeroMovementExtras::ReleaseLedge()
@@ -150,11 +151,27 @@ void UHeroMovementExtras::TickHanging(float Dt)
     ACharacter* H = Hero();
     UCharacterMovementComponent* Move = H->GetCharacterMovement();
     // Something else took over movement (dash, knockback ...): let go.
-    if (!Move || Move->MovementMode != MOVE_None) { ShimmyDir = 0.f; ReleasedAt = GetWorld()->GetTimeSeconds(); SetState(EHeroLedgeState::None); return; }
+    if (!Move || Move->MovementMode != MOVE_None) { if (LedgeState == EHeroLedgeState::Grabbing && H->GetMesh()) H->GetMesh()->SetRelativeLocation(MeshRelative); ShimmyDir = 0.f; ReleasedAt = GetWorld()->GetTimeSeconds(); SetState(EHeroLedgeState::None); return; }
     Move->Velocity = FVector::ZeroVector;
-    const FVector Input = H->GetLastMovementInputVector();
+    // This component ticks before the movement component, so this frame's input is still pending.
+    FVector Input = H->GetPendingMovementInputVector();
+    if (Input.IsNearlyZero()) Input = H->GetLastMovementInputVector();
     const bool bJump = H->bPressedJump;
     H->bPressedJump = false;
+    // While the grab animation plays, only hang. The grab clip ends with the hands 168 cm up and 115 cm in front
+    // of its origin, the hang clip has them 234 cm up and 30 cm in front: shift the mesh so the hands stay on the ledge.
+    if (LedgeState == EHeroLedgeState::Grabbing)
+    {
+        USkeletalMeshComponent* Mesh = H->GetMesh();
+        if (Mesh && StateTime <= Dt + KINDA_SMALL_NUMBER) MeshRelative = Mesh->GetRelativeLocation();
+        if (StateTime >= GrabTime)
+        {
+            if (Mesh) Mesh->SetRelativeLocation(MeshRelative);
+            SetState(EHeroLedgeState::Hanging);
+        }
+        else if (Mesh) Mesh->SetRelativeLocation(MeshRelative + FVector(30.f - 115.f, 0.f, 234.f - 168.f));
+        return;
+    }
 
     // S / stick back = let go.
     if (FVector::DotProduct(Input, LedgeNormal) > .6f) { ReleaseLedge(); return; }
@@ -169,7 +186,19 @@ void UHeroMovementExtras::TickHanging(float Dt)
         // Only climb if the capsule fits on top.
         FCollisionQueryParams Q(SCENE_QUERY_STAT(HeroClimb), false, H);
         const bool bBlocked = GetWorld()->OverlapBlockingTestByChannel(ClimbTo, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeCapsule(Radius, HalfHeight), Q);
-        if (!bBlocked) { ShimmyDir = 0.f; SetState(EHeroLedgeState::ClimbUp); return; }
+        if (!bBlocked)
+        {
+            ShimmyDir = 0.f;
+            // The mesh stays where it is and plays the climb with its own (original) motion,
+            // while the capsule (and camera) take a clean path: straight up, then over the edge.
+            if (USkeletalMeshComponent* Mesh = H->GetMesh())
+            {
+                MeshRelative = Mesh->GetRelativeLocation();
+                MeshWorldDuringClimb = Mesh->GetComponentLocation();
+            }
+            SetState(EHeroLedgeState::ClimbUp);
+            return;
+        }
     }
     // Shimmy along the edge with A/D, only while the edge continues straight.
     const FVector Right = H->GetActorRightVector();
@@ -187,11 +216,15 @@ void UHeroMovementExtras::TickHanging(float Dt)
         const bool bEdge = FindLedge(ProbeCenter, -LedgeNormal, WallPoint, N, TopZ)
             && FVector::DotProduct(N, LedgeNormal) > FMath::Cos(FMath::DegreesToRadians(StraightEdgeAngle))
             && FMath::Abs(TopZ - LedgeTopZ) < 12.f;
-        if (bEdge)
+        // Nothing in the way to the side (the capsule touches the wall, so no sweep; a side trace instead).
+        FHitResult SideHit;
+        FCollisionQueryParams Q(SCENE_QUERY_STAT(HeroShimmy), false, H);
+        const FVector C = H->GetActorLocation();
+        const bool bBlocked = GetWorld()->LineTraceSingleByChannel(SideHit, C, C + Right * Dir * (Radius + 15.f), ECC_Visibility, Q);
+        if (bEdge && !bBlocked)
         {
-            FHitResult Hit;
-            H->SetActorLocation(H->GetActorLocation() + Step, true, &Hit);
-            if (!Hit.bBlockingHit) ShimmyDir = Dir;
+            H->SetActorLocation(C + Step, false, nullptr, ETeleportType::TeleportPhysics);
+            ShimmyDir = Dir;
         }
     }
 }
@@ -204,10 +237,24 @@ void UHeroMovementExtras::TickClimb(float Dt)
     H->bPressedJump = false;
     if (LedgeState == EHeroLedgeState::ClimbUp)
     {
-        // Linear, matching the climb clip whose own travel was removed linearly (no collision while climbing).
         const float A = FMath::Clamp(StateTime / FMath::Max(.05f, ClimbUpTime), 0.f, 1.f);
-        H->SetActorLocation(FMath::Lerp(ClimbFrom, ClimbTo, A), false, nullptr, ETeleportType::TeleportPhysics);
-        if (A >= 1.f) SetState(EHeroLedgeState::StandUp);
+        const float UpA = FMath::InterpEaseInOut(0.f, 1.f, FMath::Clamp(A / .65f, 0.f, 1.f), 2.f);
+        const float OverA = FMath::InterpEaseInOut(0.f, 1.f, FMath::Clamp((A - .65f) / .35f, 0.f, 1.f), 2.f);
+        FVector P = FMath::Lerp(ClimbFrom, ClimbTo, OverA);
+        P.Z = FMath::Lerp(ClimbFrom.Z, ClimbTo.Z, UpA);
+        H->SetActorLocation(P, false, nullptr, ETeleportType::TeleportPhysics);
+        if (USkeletalMeshComponent* Mesh = H->GetMesh())
+        {
+            // The climb clip expects the ledge ClipLedgeHeight above its origin; shift the mesh (blended in) so it fits this ledge.
+            const float HalfHeight = H->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+            const float Fix = (HangBelowLedge + HalfHeight) - ClipLedgeHeight;
+            Mesh->SetWorldLocation(MeshWorldDuringClimb + FVector(0, 0, Fix));
+        }
+        if (A >= 1.f)
+        {
+            if (USkeletalMeshComponent* Mesh = H->GetMesh()) Mesh->SetRelativeLocation(MeshRelative);
+            SetState(EHeroLedgeState::StandUp);
+        }
     }
     else if (StateTime >= StandUpTime)
     {

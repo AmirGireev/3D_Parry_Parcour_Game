@@ -7,7 +7,7 @@
 class ACharacter;
 
 UENUM(BlueprintType)
-enum class EHeroLedgeState : uint8 { None, Hanging, ClimbUp, StandUp };
+enum class EHeroLedgeState : uint8 { None, Hanging, ClimbUp, StandUp, Grabbing };
 
 /**
  * Extra movement for the player hero:
@@ -32,11 +32,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float MinLedgeAboveCenter = 10.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float MaxLedgeAboveCenter = 160.f;
     /** While hanging the capsule center sits this far below the ledge top (hands of the hang clip on the edge). */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float HangBelowLedge = 144.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float HangBelowLedge = 132.f;
+    /** Length of the grab animation (jumping to hanging) after catching the ledge; 0 = hang immediately. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float GrabTime = .4f;
     /** Gap between capsule and wall while hanging. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float HangWallGap = 0.f;
     /** How far the capsule moves forward (onto the ledge) while climbing up; matches the climb clip. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float ClimbForward = 56.f;
+    /** Height of the ledge above the origin in the climb clip (hands of the hang pose), used to fit the clip to the real ledge. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float ClipLedgeHeight = 234.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float ShimmySpeed = 150.f;
     /** Max angle (deg) between wall normals for the edge to count as straight while shimmying. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ledge") float StraightEdgeAngle = 10.f;
@@ -73,6 +77,7 @@ private:
     FVector LedgeNormal = FVector::ZeroVector;
     float LedgeTopZ = 0.f;
     FVector ClimbFrom = FVector::ZeroVector, ClimbTo = FVector::ZeroVector;
+    FVector MeshRelative = FVector::ZeroVector, MeshWorldDuringClimb = FVector::ZeroVector;
     float ReleasedAt = -100.f;
 };
 

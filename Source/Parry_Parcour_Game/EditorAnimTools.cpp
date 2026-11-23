@@ -68,7 +68,8 @@ static void AnimInfo(const TArray<FString>& Args)
         const int32 B = Ref.FindBoneIndex(Bone);
         if (B == INDEX_NONE) continue;
         const FVector V = ComponentTransform(Model, Ref, B, FFrameNumber(0)).GetLocation();
-        UE_LOG(LogTemp, Display, TEXT("ParryAnim POS %s x=%.4f y=%.4f z=%.4f"), Bone, V.X, V.Y, V.Z);
+        const FVector E = ComponentTransform(Model, Ref, B, FFrameNumber(Frames)).GetLocation();
+        UE_LOG(LogTemp, Display, TEXT("ParryAnim POS %s first x=%.4f y=%.4f z=%.4f last x=%.4f y=%.4f z=%.4f"), Bone, V.X, V.Y, V.Z, E.X, E.Y, E.Z);
     }
 }
 
@@ -163,7 +164,15 @@ static void InPlace(const TArray<FString>& Args)
     if (!bZ) Drift.Z = 0.f;
     // "addz=<units>" removes this much extra height over the clip (e.g. to match how far the capsule climbs).
     for (int32 I = 1; I < Args.Num(); ++I)
+    {
         if (Args[I].StartsWith(TEXT("addz="), ESearchCase::IgnoreCase)) Drift.Z += FCString::Atof(*Args[I].Mid(5));
+        // "add=x,y,z" removes this extra linear travel (negative values put travel back in).
+        if (Args[I].StartsWith(TEXT("add="), ESearchCase::IgnoreCase))
+        {
+            TArray<FString> P; Args[I].Mid(4).ParseIntoArray(P, TEXT(","));
+            if (P.Num() == 3) Drift += FVector(FCString::Atof(*P[0]), FCString::Atof(*P[1]), FCString::Atof(*P[2]));
+        }
+    }
     // Yaw drift: heading of the pelvis forward axis in the horizontal plane, first vs last key.
     auto Heading = [](const FTransform& T) { FVector F = T.GetRotation().GetAxisX(); F.Z = 0.f; return FMath::Atan2(F.Y, F.X); };
     const float YawDrift = bYaw ? FMath::FindDeltaAngleRadians(Heading(PelvisCS[0]), Heading(PelvisCS.Last())) : 0.f;
