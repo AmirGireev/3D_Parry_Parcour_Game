@@ -286,8 +286,13 @@ void UHeroMovementExtras::TickHanging(float Dt)
         return;
     }
 
+    // The move input arrives camera-relative; turn it back into stick/key axes (forward = W, right = D),
+    // so on the ledge A/D always shimmy and S always lets go, no matter where the camera looks.
+    const FRotator CamYaw(0.f, H->GetControlRotation().Yaw, 0.f);
+    const float InFwd = FVector::DotProduct(Input, FRotationMatrix(CamYaw).GetUnitAxis(EAxis::X));
+    const float InRight = FVector::DotProduct(Input, FRotationMatrix(CamYaw).GetUnitAxis(EAxis::Y));
     // S / stick back = let go.
-    if (FVector::DotProduct(Input, LedgeNormal) > .6f) { ReleaseLedge(); return; }
+    if (InFwd < -.6f) { ReleaseLedge(); return; }
     // Jump = climb up onto the ledge.
     if (bJump && StateTime > .15f)
     {
@@ -315,7 +320,7 @@ void UHeroMovementExtras::TickHanging(float Dt)
     }
     // Shimmy along the edge with A/D, only while the edge continues straight.
     const FVector Right = H->GetActorRightVector();
-    const float Side = FVector::DotProduct(Input, Right);
+    const float Side = InRight;
     ShimmyDir = 0.f;
     if (FMath::Abs(Side) > .3f)
     {
