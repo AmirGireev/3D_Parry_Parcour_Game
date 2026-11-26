@@ -73,27 +73,44 @@ struct FCombatPreviewNode : FAnimNode_Base
         FCSPose<FCompactPose> CS;
         CS.InitPose(Out.Pose);
         const float MaxRad=FMath::DegreesToRadians(ArmMaxElevation);
-        // UE mannequin names (upperarm_l / lowerarm_l) or Mixamo names (LeftArm / LeftForeArm).
-        static const TCHAR* ArmBones[][2] = {
-            {TEXT("upperarm_l"), TEXT("lowerarm_l")}, {TEXT("upperarm_r"), TEXT("lowerarm_r")},
-            {TEXT("LeftArm"), TEXT("LeftForeArm")}, {TEXT("RightArm"), TEXT("RightForeArm")}};
-        for (const auto& Pair : ArmBones)
+        // Rotation that turns direction Dir down to MaxRad elevation (keeping its heading); identity if already low enough.
+        auto DownTo=[MaxRad](const FVector& Dir)->FQuat
         {
-            const int32 UpperRef=Ref.FindBoneIndex(FName(Pair[0]));
-            const int32 LowerRef=Ref.FindBoneIndex(FName(Pair[1]));
-            if (UpperRef==INDEX_NONE || LowerRef==INDEX_NONE) continue;
+            if (Dir.IsNearlyZero() || FMath::Asin(FMath::Clamp(Dir.Z,-1.f,1.f))<=MaxRad) return FQuat::Identity;
+            FVector Flat(Dir.X,Dir.Y,0.f);
+            if (!Flat.Normalize()) return FQuat::Identity;
+            return FQuat::FindBetweenNormals(Dir, Flat*FMath::Cos(MaxRad)+FVector(0,0,FMath::Sin(MaxRad)));
+        };
+        // Upper arm, forearm, hand: UE mannequin names or Mixamo names.
+        static const TCHAR* ArmBones[][3] = {
+            {TEXT("upperarm_l"), TEXT("lowerarm_l"), TEXT("hand_l")}, {TEXT("upperarm_r"), TEXT("lowerarm_r"), TEXT("hand_r")},
+            {TEXT("LeftArm"), TEXT("LeftForeArm"), TEXT("LeftHand")}, {TEXT("RightArm"), TEXT("RightForeArm"), TEXT("RightHand")}};
+        for (const auto& Chain : ArmBones)
+        {
+            const int32 UpperRef=Ref.FindBoneIndex(FName(Chain[0]));
+            const int32 LowerRef=Ref.FindBoneIndex(FName(Chain[1]));
+            const int32 HandRef=Ref.FindBoneIndex(FName(Chain[2]));
+            if (UpperRef==INDEX_NONE || LowerRef==INDEX_NONE || HandRef==INDEX_NONE) continue;
             const FCompactPoseBoneIndex Upper=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(UpperRef));
             const FCompactPoseBoneIndex Lower=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(LowerRef));
-            if (Upper.GetInt()==INDEX_NONE || Lower.GetInt()==INDEX_NONE) continue;
+            const FCompactPoseBoneIndex Hand=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(HandRef));
+            if (Upper.GetInt()==INDEX_NONE || Lower.GetInt()==INDEX_NONE || Hand.GetInt()==INDEX_NONE) continue;
             FTransform UpperCS=CS.GetComponentSpaceTransform(Upper);
-            const FVector Dir=(CS.GetComponentSpaceTransform(Lower).GetLocation()-UpperCS.GetLocation()).GetSafeNormal();
-            if (Dir.IsNearlyZero() || FMath::Asin(FMath::Clamp(Dir.Z,-1.f,1.f))<=MaxRad) continue;
-            FVector Flat(Dir.X,Dir.Y,0.f);
-            if (!Flat.Normalize()) continue;
-            const FVector Target=Flat*FMath::Cos(MaxRad)+FVector(0,0,FMath::Sin(MaxRad));
-            UpperCS.SetRotation(FQuat::FindBetweenNormals(Dir,Target)*UpperCS.GetRotation());
+            FTransform LowerCS=CS.GetComponentSpaceTransform(Lower);
+            const FVector HandPos=CS.GetComponentSpaceTransform(Hand).GetLocation();
+            const FVector Shoulder=UpperCS.GetLocation();
+            // 1) Upper arm (shoulder -> elbow) down to the limit; the forearm and hand swing along.
+            const FQuat DU=DownTo((LowerCS.GetLocation()-Shoulder).GetSafeNormal());
+            UpperCS.SetRotation(DU*UpperCS.GetRotation());
+            LowerCS.SetLocation(Shoulder+DU.RotateVector(LowerCS.GetLocation()-Shoulder));
+            LowerCS.SetRotation(DU*LowerCS.GetRotation());
+            const FVector NewHand=Shoulder+DU.RotateVector(HandPos-Shoulder);
+            // 2) Forearm (elbow -> hand) too, so a bent elbow can't keep the hands up.
+            const FQuat DL=DownTo((NewHand-LowerCS.GetLocation()).GetSafeNormal());
+            LowerCS.SetRotation(DL*LowerCS.GetRotation());
             const FCompactPoseBoneIndex Parent=Out.Pose.GetParentBoneIndex(Upper);
             Out.Pose[Upper]=UpperCS.GetRelativeTransform(CS.GetComponentSpaceTransform(Parent));
+            Out.Pose[Lower]=LowerCS.GetRelativeTransform(UpperCS);
         }
     }
     void AimGuard(FPoseContext& Out)
