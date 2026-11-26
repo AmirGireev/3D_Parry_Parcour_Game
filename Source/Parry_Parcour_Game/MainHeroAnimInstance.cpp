@@ -187,6 +187,9 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     // Keep the arms below shoulder height in the normal jump only.
     bLimitArms = bFalling;
+    // Highest angle the arms may point while falling (degrees, negative = below horizontal).
+    ArmMaxElevation = FallArmElevation;
+    ArmDrop = FallArmDrop;
     // Standing / turning: push the arms a little away from the body so the hands don't sink into the hips.
     ArmSpread = (!bFalling && !bDashing && Speed < RunSpeed && (Clip == Clips[Idle] || Clip == Clips[TurnL] || Clip == Clips[TurnR])) ? IdleArmSpread : 0.f;
 

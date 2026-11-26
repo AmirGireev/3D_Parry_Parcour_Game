@@ -65,6 +65,7 @@ struct FCombatPreviewNode : FAnimNode_Base
         }
     }
     float ArmMaxElevation=-45.f;
+    float ArmDrop=0.f;
     void LowerArms(FPoseContext& Out)
     {
         if (!LimitArms) return;
@@ -73,13 +74,20 @@ struct FCombatPreviewNode : FAnimNode_Base
         FCSPose<FCompactPose> CS;
         CS.InitPose(Out.Pose);
         const float MaxRad=FMath::DegreesToRadians(ArmMaxElevation);
-        // Rotation that turns direction Dir down to MaxRad elevation (keeping its heading); identity if already low enough.
-        auto DownTo=[MaxRad](const FVector& Dir)->FQuat
+        // Rotation that turns direction Dir down: first capped at MaxRad elevation, then lowered by ArmDrop degrees
+        // more (never past almost straight down), keeping its heading.
+        const float DropRad=FMath::DegreesToRadians(ArmDrop);
+        const float FloorRad=FMath::DegreesToRadians(-85.f);
+        auto DownTo=[MaxRad,DropRad,FloorRad](const FVector& Dir, bool bDrop)->FQuat
         {
-            if (Dir.IsNearlyZero() || FMath::Asin(FMath::Clamp(Dir.Z,-1.f,1.f))<=MaxRad) return FQuat::Identity;
+            if (Dir.IsNearlyZero()) return FQuat::Identity;
+            const float Elev=FMath::Asin(FMath::Clamp(Dir.Z,-1.f,1.f));
+            float Want=FMath::Min(Elev, MaxRad);
+            if (bDrop && DropRad>0.f) Want=FMath::Max(Want-DropRad, FMath::Min(FloorRad, Want));
+            if (Want>=Elev-KINDA_SMALL_NUMBER) return FQuat::Identity;
             FVector Flat(Dir.X,Dir.Y,0.f);
             if (!Flat.Normalize()) return FQuat::Identity;
-            return FQuat::FindBetweenNormals(Dir, Flat*FMath::Cos(MaxRad)+FVector(0,0,FMath::Sin(MaxRad)));
+            return FQuat::FindBetweenNormals(Dir, Flat*FMath::Cos(Want)+FVector(0,0,FMath::Sin(Want)));
         };
         // Upper arm, forearm, hand: UE mannequin names or Mixamo names.
         static const TCHAR* ArmBones[][3] = {
@@ -100,13 +108,13 @@ struct FCombatPreviewNode : FAnimNode_Base
             const FVector HandPos=CS.GetComponentSpaceTransform(Hand).GetLocation();
             const FVector Shoulder=UpperCS.GetLocation();
             // 1) Upper arm (shoulder -> elbow) down to the limit; the forearm and hand swing along.
-            const FQuat DU=DownTo((LowerCS.GetLocation()-Shoulder).GetSafeNormal());
+            const FQuat DU=DownTo((LowerCS.GetLocation()-Shoulder).GetSafeNormal(), true);
             UpperCS.SetRotation(DU*UpperCS.GetRotation());
             LowerCS.SetLocation(Shoulder+DU.RotateVector(LowerCS.GetLocation()-Shoulder));
             LowerCS.SetRotation(DU*LowerCS.GetRotation());
             const FVector NewHand=Shoulder+DU.RotateVector(HandPos-Shoulder);
             // 2) Forearm (elbow -> hand) too, so a bent elbow can't keep the hands up.
-            const FQuat DL=DownTo((NewHand-LowerCS.GetLocation()).GetSafeNormal());
+            const FQuat DL=DownTo((NewHand-LowerCS.GetLocation()).GetSafeNormal(), false);
             LowerCS.SetRotation(DL*LowerCS.GetRotation());
             const FCompactPoseBoneIndex Parent=Out.Pose.GetParentBoneIndex(Upper);
             Out.Pose[Upper]=UpperCS.GetRelativeTransform(CS.GetComponentSpaceTransform(Parent));
@@ -249,6 +257,7 @@ struct FCombatPreviewProxy : FAnimInstanceProxy
         Node.GuardDirection=Anim->GuardDirection;
         Node.LimitArms=Anim->bLimitArms;
         Node.ArmMaxElevation=Anim->ArmMaxElevation;
+        Node.ArmDrop=Anim->ArmDrop;
         Node.OverlayActive=Anim->bOverlayActive;
         Node.OverlayRate=Anim->OverlayRate;
         Node.OverlayRoot=Anim->OverlayRoot;

@@ -23,7 +23,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat test") FVector GuardDirection = FVector(-.65,.35,.7);
     /** When true, upper arms are rotated down so they never point higher than ArmMaxElevation (degrees, negative = below horizontal). */
     UPROPERTY(Transient) bool bLimitArms = false;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Arms") float ArmMaxElevation = -80.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Arms") float ArmMaxElevation = -30.f;
+    /** While bLimitArms: arms are additionally lowered by this many degrees (relative to the clip). */
+    UPROPERTY(Transient) float ArmDrop = 0.f;
     /** Upper-body layer: OverlayRoot and its children come from OverlayClip while bOverlayActive (fades in/out over OverlayBlendTime). */
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> OverlayClip;
     UPROPERTY(Transient) bool bOverlayActive = false;
