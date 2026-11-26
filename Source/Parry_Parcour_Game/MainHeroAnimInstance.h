@@ -35,8 +35,6 @@ public:
     /** A turn only starts if the hero was standing within this time (s). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnStartWindow = .2f;
     /** Degrees the upper arms are pushed away from the body while standing (hands out of the hips). */
-    /** Arms while falling: they never point higher than this (degrees, negative = below horizontal). */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float FallArmElevation = -30.f;
     /** Arms while falling are lowered this many degrees more than in the fall clip. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float FallArmDrop = 30.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float IdleArmSpread = 17.f;
