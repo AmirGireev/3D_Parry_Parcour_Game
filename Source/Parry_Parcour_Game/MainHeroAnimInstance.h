@@ -49,7 +49,7 @@ private:
     int32 LastJumpCount = 0;
     float FallTime = 0.f, FallDir = 1.f, DoubleJumpStart = -10.f;
     float LastYaw = 0.f, TurnUntil = -1.f, TurnSign = 0.f, LastIdleTime = 0.f;
-    bool bHaveYaw = false;
+    bool bHaveYaw = false, bWasTurning = false;
     uint8 LastLedge = 0;
     float Clock = 0.f, ParryUntil = -1.f, AirStart = 0.f, LandStart = -10.f, StartLength = 0.f, LandLength = 0.f;
 };

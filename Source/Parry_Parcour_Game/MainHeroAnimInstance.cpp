@@ -39,6 +39,8 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     if (!Hero || Clips.Num() < Count) return;
     Clock += DeltaSeconds;
     bSnapNextClip = false;
+    // The hero always holds the katana in the right hand.
+    bGripRightHand = true;
 
     const UCharacterMovementComponent* Move = Hero->GetCharacterMovement();
     const bool bFalling = Move && Move->IsFalling();
@@ -160,16 +162,17 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         // Short tap on the stick / A / D: starting from standing, the hero swings round quickly -> turn clip.
         // (A tap still gives some speed, so the start is judged by "was standing a moment ago", and the clip
         // keeps playing until the hero really runs.)
-        if (Speed <= IdleSpeed) LastIdleTime = Clock;
-        if (!bStrafing && Clock - LastIdleTime < TurnStartWindow && FMath::Abs(YawRate) > TurnMinYawRate && Clock >= TurnUntil)
+        // The movement component turns the hero on the spot after a short tap; play the matching turn clip
+        // (looping while the turn lasts, so longer turns keep stepping).
+        const bool bTurning = Extras && Extras->bTurningInPlace;
+        if (bTurning)
         {
-            TurnSign = FMath::Sign(YawRate);
-            const UAnimSequence* T = Clips[TurnSign > 0.f ? TurnR : TurnL];
-            TurnUntil = T ? Clock + T->GetPlayLength() / FMath::Max(.05f, TurnRate) : Clock;
-            if (T) PlayClip(Clips[TurnSign > 0.f ? TurnR : TurnL], false, TurnRate, true);
+            const bool bNewTurn = !bWasTurning || TurnSign != Extras->TurnDir;
+            TurnSign = Extras->TurnDir;
+            PlayClip(Clips[TurnSign > 0.f ? TurnR : TurnL], true, TurnRate, bNewTurn);
         }
-        const bool bTurning = Clock < TurnUntil && Speed < TurnMaxSpeed;
-        if (bTurning) PlayClip(Clips[TurnSign > 0.f ? TurnR : TurnL], false, TurnRate);
+        bWasTurning = bTurning;
+        if (bTurning) {}
         else
         {
             TurnUntil = -1.f;

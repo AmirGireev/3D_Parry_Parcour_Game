@@ -25,6 +25,17 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Lock-on") float LockFaceSpeed = 12.f;
     UPROPERTY(BlueprintReadOnly, Category="Lock-on") bool bStrafing = false;
 
+    // --- Turn in place ---
+    /** Input must point at least this far (deg) from where the hero looks to start a turn. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turn") float TurnMinAngle = 45.f;
+    /** Turning speed while the turn clip plays (deg/s). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turn") float TurnDegPerSec = 300.f;
+    /** The turn stops as soon as the hero moves faster than this (held input = run instead). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turn") float TurnAbortSpeed = 350.f;
+    UPROPERTY(BlueprintReadOnly, Category="Turn") bool bTurningInPlace = false;
+    /** -1 left, +1 right. */
+    UPROPERTY(BlueprintReadOnly, Category="Turn") float TurnDir = 0.f;
+
     // --- Air rules ---
     /** Must match the hero's dash cooldown; used when the air-dash lock is released on landing. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Air") float DashCooldownTime = .75f;
@@ -76,6 +87,8 @@ private:
     void TickClimb(float Dt);
     void SetState(EHeroLedgeState S) { LedgeState = S; StateTime = 0.f; }
     void UpdateAirRules();
+    void UpdateTurnInPlace(float Dt);
+    float LastStandTime = 0.f, TurnTargetYaw = 0.f, TurnStartTime = 0.f;
     int32 AirJumpsUsed = 0;
     int32 BaseMaxCount = 2, WrittenMaxCount = INDEX_NONE;
     bool bWasDashing = false, bWasOnGround = true;

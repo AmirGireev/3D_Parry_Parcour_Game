@@ -47,7 +47,50 @@ void UHeroMovementExtras::TickComponent(float DeltaTime, ELevelTick TickType, FA
     default: TickClimb(DeltaTime); break;
     }
     UpdateLockOn(DeltaTime);
+    UpdateTurnInPlace(DeltaTime);
     UpdateAirRules();
+}
+
+// ---------------------------------------------------------------- turn in place
+void UHeroMovementExtras::UpdateTurnInPlace(float Dt)
+{
+    ACharacter* H = Hero();
+    UCharacterMovementComponent* Move = H->GetCharacterMovement();
+    if (!Move) return;
+    const float Now = GetWorld()->GetTimeSeconds();
+    const float Speed = FVector(H->GetVelocity().X, H->GetVelocity().Y, 0.f).Size();
+    if (Speed < 20.f) LastStandTime = Now;
+    const bool bAllowed = !bStrafing && !IsOnLedge() && !ReadBool(TEXT("bIsDashing")) && Move->IsMovingOnGround();
+
+    FVector Input = H->GetPendingMovementInputVector();
+    if (Input.IsNearlyZero()) Input = H->GetLastMovementInputVector();
+    Input.Z = 0.f;
+
+    if (!bTurningInPlace)
+    {
+        // Short tap from standing: the input points well away from where the hero looks.
+        if (!bAllowed || Input.Size() < .1f || Now - LastStandTime > .15f) return;
+        const float Delta = FMath::FindDeltaAngleDegrees(H->GetActorRotation().Yaw, Input.Rotation().Yaw);
+        if (FMath::Abs(Delta) < TurnMinAngle) return;
+        bTurningInPlace = true;
+        TurnDir = FMath::Sign(Delta);
+        TurnTargetYaw = Input.Rotation().Yaw;
+        TurnStartTime = Now;
+    }
+    // Keep the target following the stick while it is held.
+    if (Input.Size() >= .1f) TurnTargetYaw = Input.Rotation().Yaw;
+    const float Left = FMath::FindDeltaAngleDegrees(H->GetActorRotation().Yaw, TurnTargetYaw);
+    const bool bDone = !bAllowed || FMath::Abs(Left) < 2.f || Speed > TurnAbortSpeed || Now - TurnStartTime > 1.f;
+    if (bDone)
+    {
+        bTurningInPlace = false;
+        if (bHaveDefaults && !bStrafing) Move->bOrientRotationToMovement = bDefaultOrientToMovement;
+        return;
+    }
+    // Rotate at the turn-clip pace instead of snapping round, so the clip and the body turn together.
+    Move->bOrientRotationToMovement = false;
+    const float Step = FMath::Clamp(Left, -TurnDegPerSec * Dt, TurnDegPerSec * Dt);
+    H->SetActorRotation(FRotator(0.f, H->GetActorRotation().Yaw + Step, 0.f));
 }
 
 // ---------------------------------------------------------------- air rules (jumps / dash)
@@ -56,7 +99,9 @@ void UHeroMovementExtras::UpdateAirRules()
     ACharacter* H = Hero();
     UCharacterMovementComponent* Move = H->GetCharacterMovement();
     if (!Move) return;
-    const bool bOnGround = Move->IsMovingOnGround();
+    // Real ground check: the dash ends by switching to "walking" even in mid-air, which made the movement
+    // component claim ground for a frame and refilled jumps and the air dash.
+    const bool bOnGround = IsOnGround();
     const bool bDashing = ReadBool(TEXT("bIsDashing"));
     const bool bCounter = ReadBool(TEXT("bIsCounterDash"));
     const float Now = GetWorld()->GetTimeSeconds();
@@ -322,7 +367,21 @@ void UHeroMovementExtras::TickClimb(float Dt)
 bool UHeroMovementExtras::IsOnGround() const
 {
     const ACharacter* H = Hero();
-    return H && H->GetCharacterMovement() && H->GetCharacterMovement()->IsMovingOnGround();
+    const UCharacterMovementComponent* Move = H ? H->GetCharacterMovement() : nullptr;
+    if (!Move || Move->Velocity.Z > 50.f) return false;
+    // Short trace below the capsule bottom: walkable floor there = on the ground, whatever the movement mode says.
+    const float Half = H->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    const float Radius = H->GetCapsuleComponent()->GetScaledCapsuleRadius();
+    const FVector C = H->GetActorLocation();
+    FCollisionQueryParams Q(SCENE_QUERY_STAT(HeroGround), false, H);
+    // Center and four points near the capsule edge, so standing on a ledge edge still counts.
+    for (const FVector& O : {FVector::ZeroVector, FVector(Radius * .7f, 0, 0), FVector(-Radius * .7f, 0, 0), FVector(0, Radius * .7f, 0), FVector(0, -Radius * .7f, 0)})
+    {
+        FHitResult Hit;
+        if (GetWorld()->LineTraceSingleByChannel(Hit, C + O, C + O - FVector(0, 0, Half + 12.f), ECC_Visibility, Q) && Hit.ImpactNormal.Z > .7f)
+            return true;
+    }
+    return false;
 }
 
 bool UHeroParryLibrary::AirDashAllowed(ACharacter* InHero)
