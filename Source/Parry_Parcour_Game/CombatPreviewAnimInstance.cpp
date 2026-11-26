@@ -13,6 +13,36 @@ struct FCombatPreviewNode : FAnimNode_Base
     FVector GuardDirection=FVector(-.65,.35,.7);
     bool LimitArms=false;
     bool SnapNext=false; // next clip switch happens without crossfade
+    float ArmSpread=0.f, ArmSpreadNow=0.f;
+    // Rotates both upper arms away from the body (sideways) by ArmSpreadNow degrees.
+    void SpreadArms(FPoseContext& Out)
+    {
+        if (ArmSpreadNow <= .01f) return;
+        const FBoneContainer& Bones=Out.Pose.GetBoneContainer();
+        const FReferenceSkeleton& Ref=Bones.GetReferenceSkeleton();
+        FCSPose<FCompactPose> CS;
+        CS.InitPose(Out.Pose);
+        static const TCHAR* ArmBones[][2] = {
+            {TEXT("upperarm_l"), TEXT("lowerarm_l")}, {TEXT("upperarm_r"), TEXT("lowerarm_r")},
+            {TEXT("LeftArm"), TEXT("LeftForeArm")}, {TEXT("RightArm"), TEXT("RightForeArm")}};
+        for (const auto& Pair : ArmBones)
+        {
+            const int32 UpperRef=Ref.FindBoneIndex(FName(Pair[0])), LowerRef=Ref.FindBoneIndex(FName(Pair[1]));
+            if (UpperRef==INDEX_NONE || LowerRef==INDEX_NONE) continue;
+            const FCompactPoseBoneIndex Upper=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(UpperRef));
+            const FCompactPoseBoneIndex Lower=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(LowerRef));
+            if (Upper.GetInt()==INDEX_NONE || Lower.GetInt()==INDEX_NONE) continue;
+            FTransform UpperCS=CS.GetComponentSpaceTransform(Upper);
+            const FVector Dir=(CS.GetComponentSpaceTransform(Lower).GetLocation()-UpperCS.GetLocation()).GetSafeNormal();
+            // Mesh space: X is sideways (left arm at +X), Y forward, Z up.
+            const FVector OutSide(FMath::Sign(UpperCS.GetLocation().X), 0.f, 0.f);
+            FVector Axis=FVector::CrossProduct(Dir, OutSide);
+            if (OutSide.IsZero() || !Axis.Normalize()) continue;
+            UpperCS.SetRotation(FQuat(Axis, FMath::DegreesToRadians(ArmSpreadNow))*UpperCS.GetRotation());
+            const FCompactPoseBoneIndex Parent=Out.Pose.GetParentBoneIndex(Upper);
+            Out.Pose[Upper]=UpperCS.GetRelativeTransform(CS.GetComponentSpaceTransform(Parent));
+        }
+    }
     float ArmMaxElevation=-45.f;
     void LowerArms(FPoseContext& Out)
     {
@@ -122,6 +152,8 @@ struct FCombatPreviewNode : FAnimNode_Base
             Pending = false;
         }
         Blend = FMath::Min(1.f, Blend + C.GetDeltaTime() / .12f);
+        // Arm spread fades in/out over ~0.2 s so switching clips does not snap the arms.
+        ArmSpreadNow = FMath::FInterpConstantTo(ArmSpreadNow, ArmSpread, C.GetDeltaTime(), 60.f);
         Current.SetPlayRate(Rate);
         Current.Update_AnyThread(C.FractionalWeight(Blend));
         if (HasPrevious && Blend < 1.f) Previous.Update_AnyThread(C.FractionalWeight(1.f-Blend));
@@ -145,7 +177,7 @@ struct FCombatPreviewNode : FAnimNode_Base
     virtual void Evaluate_AnyThread(FPoseContext& Out) override
     {
         if (!Current.GetSequence()) { Out.ResetToRefPose(); return; }
-        if (!HasPrevious || Blend >= 1.f) { Current.Evaluate_AnyThread(Out); AimGuard(Out); LowerArms(Out); ApplyOverlay(Out); return; }
+        if (!HasPrevious || Blend >= 1.f) { Current.Evaluate_AnyThread(Out); AimGuard(Out); LowerArms(Out); SpreadArms(Out); ApplyOverlay(Out); return; }
         FPoseContext A(Out), B(Out);
         Previous.Evaluate_AnyThread(A);
         Current.Evaluate_AnyThread(B);
@@ -153,6 +185,7 @@ struct FCombatPreviewNode : FAnimNode_Base
         FAnimationRuntime::BlendTwoPosesTogether(AD, BD, 1.f-Blend, OD);
         AimGuard(Out);
         LowerArms(Out);
+        SpreadArms(Out);
         ApplyOverlay(Out);
     }
 };
@@ -171,6 +204,7 @@ struct FCombatPreviewProxy : FAnimInstanceProxy
         Node.Rate = Anim->Rate;
         Node.Loop = Anim->bLoop;
         Node.SnapNext = Anim->bSnapNextClip;
+        Node.ArmSpread = Anim->ArmSpread;
         Node.GuardDirection=Anim->GuardDirection;
         Node.LimitArms=Anim->bLimitArms;
         Node.ArmMaxElevation=Anim->ArmMaxElevation;

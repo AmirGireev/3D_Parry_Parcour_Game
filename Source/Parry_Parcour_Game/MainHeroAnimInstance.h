@@ -31,7 +31,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float ParryHoldTime = .5f;
     /** Turn in place: plays when the hero turns faster than this (deg/s) while slower than TurnMaxSpeed. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnMinYawRate = 120.f;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnMaxSpeed = 250.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnMaxSpeed = 450.f;
+    /** A turn only starts if the hero was standing within this time (s). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnStartWindow = .2f;
+    /** Degrees the upper arms are pushed away from the body while standing (hands out of the hips). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float IdleArmSpread = 12.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnRate = 1.5f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float StrafeWalkRate = 1.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float StrafeRunRate = 1.f;
@@ -44,7 +48,7 @@ private:
     bool bWasFalling = false, bDoubleJump = false, bWasParrying = false;
     int32 LastJumpCount = 0;
     float FallTime = 0.f, FallDir = 1.f, DoubleJumpStart = -10.f;
-    float LastYaw = 0.f, TurnUntil = -1.f, TurnSign = 0.f;
+    float LastYaw = 0.f, TurnUntil = -1.f, TurnSign = 0.f, LastIdleTime = 0.f;
     bool bHaveYaw = false;
     uint8 LastLedge = 0;
     float Clock = 0.f, ParryUntil = -1.f, AirStart = 0.f, LandStart = -10.f, StartLength = 0.f, LandLength = 0.f;

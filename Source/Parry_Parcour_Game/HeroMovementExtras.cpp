@@ -61,35 +61,38 @@ void UHeroMovementExtras::UpdateAirRules()
     const bool bCounter = ReadBool(TEXT("bIsCounterDash"));
     const float Now = GetWorld()->GetTimeSeconds();
 
+    // The Blueprint (coyote time, landing) sets JumpMaxCount itself; remember its value unless it is ours.
+    if (H->JumpMaxCount != WrittenMaxCount) BaseMaxCount = H->JumpMaxCount;
+
     if (bOnGround || IsOnLedge())
     {
         // Back on the ground (or holding a ledge): air budget refilled.
         AirJumpsUsed = 0;
-        if (bAirDashUsed && bForcedDashCooldown && Now - LastDashStart >= DashCooldownTime)
-            if (FBoolProperty* P = FindFProperty<FBoolProperty>(H->GetClass(), TEXT("bDashOnCooldown"))) P->SetPropertyValue_InContainer(H, false);
         bAirDashUsed = false;
-        bForcedDashCooldown = false;
+        if (WrittenMaxCount != INDEX_NONE) { H->JumpMaxCount = BaseMaxCount; WrittenMaxCount = INDEX_NONE; }
     }
     else
     {
-        // Every movement-mode change (the dash switches to flying and back) resets the jump counter in Unreal;
-        // keep the jumps already used in this air time.
+        // Every movement-mode change (the dash switches to flying and back) resets the jump counter in Unreal,
+        // and the dash-jump does that in the very same moment it jumps. So besides restoring the counter, the
+        // allowed jump count is lowered: after a reset Unreal counts the fall as one jump, so with N jumps used
+        // the max becomes Base - N + 1 (both with and without reset exactly the remaining jumps are possible).
         AirJumpsUsed = FMath::Max(AirJumpsUsed, H->JumpCurrentCount);
         if (H->JumpCurrentCount < AirJumpsUsed) H->JumpCurrentCount = AirJumpsUsed;
+        if (AirJumpsUsed > 0 || bAirDashUsed || bDashing)
+        {
+            const int32 Want = FMath::Max(1, BaseMaxCount - AirJumpsUsed + 1);
+            H->JumpMaxCount = Want;
+            WrittenMaxCount = Want;
+        }
     }
 
-    // A normal dash started in the air uses up the air dash until landing.
+    // A normal dash started in the air uses up the air dash until landing (checked by AirDashAllowed).
     if (bDashing && !bWasDashing)
     {
         LastDashStart = Now;
         if (!bWasOnGround && !bCounter) bAirDashUsed = true;
     }
-    if (bAirDashUsed && !bOnGround)
-        if (FBoolProperty* P = FindFProperty<FBoolProperty>(H->GetClass(), TEXT("bDashOnCooldown")))
-        {
-            P->SetPropertyValue_InContainer(H, true);
-            bForcedDashCooldown = true;
-        }
     bWasDashing = bDashing;
     bWasOnGround = bOnGround;
 }
@@ -314,6 +317,20 @@ void UHeroMovementExtras::TickClimb(float Dt)
         ReleasedAt = GetWorld()->GetTimeSeconds();
         SetState(EHeroLedgeState::None);
     }
+}
+
+bool UHeroMovementExtras::IsOnGround() const
+{
+    const ACharacter* H = Hero();
+    return H && H->GetCharacterMovement() && H->GetCharacterMovement()->IsMovingOnGround();
+}
+
+bool UHeroParryLibrary::AirDashAllowed(ACharacter* InHero)
+{
+    const UHeroMovementExtras* X = InHero ? InHero->FindComponentByClass<UHeroMovementExtras>() : nullptr;
+    if (!X) return true;
+    // Starting a dash from the ground is always fine; in the air only once per air time.
+    return X->IsOnGround() || !X->bAirDashUsed;
 }
 
 // ---------------------------------------------------------------- parry helper

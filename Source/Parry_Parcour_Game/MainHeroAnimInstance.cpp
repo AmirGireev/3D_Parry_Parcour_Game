@@ -157,8 +157,11 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     }
     else
     {
-        // Short tap on the stick / A / D: the hero mostly turns on the spot -> turn clip.
-        if (!bStrafing && Speed < TurnMaxSpeed && FMath::Abs(YawRate) > TurnMinYawRate && Clock >= TurnUntil)
+        // Short tap on the stick / A / D: starting from standing, the hero swings round quickly -> turn clip.
+        // (A tap still gives some speed, so the start is judged by "was standing a moment ago", and the clip
+        // keeps playing until the hero really runs.)
+        if (Speed <= IdleSpeed) LastIdleTime = Clock;
+        if (!bStrafing && Clock - LastIdleTime < TurnStartWindow && FMath::Abs(YawRate) > TurnMinYawRate && Clock >= TurnUntil)
         {
             TurnSign = FMath::Sign(YawRate);
             const UAnimSequence* T = Clips[TurnSign > 0.f ? TurnR : TurnL];
@@ -179,6 +182,8 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     // Keep the arms below shoulder height in the normal jump only.
     bLimitArms = bFalling && !bFlipping && !bDashing;
+    // Standing / turning: push the arms a little away from the body so the hands don't sink into the hips.
+    ArmSpread = (!bFalling && !bDashing && Speed < RunSpeed && (Clip == Clips[Idle] || Clip == Clips[TurnL] || Clip == Clips[TurnR])) ? IdleArmSpread : 0.f;
 
     // Parry: guard pose on the upper body, legs keep their locomotion.
     const bool bParrying = ReadBool(Hero, TEXT("bIsParrying"));

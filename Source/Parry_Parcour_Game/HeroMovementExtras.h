@@ -77,7 +77,13 @@ private:
     void SetState(EHeroLedgeState S) { LedgeState = S; StateTime = 0.f; }
     void UpdateAirRules();
     int32 AirJumpsUsed = 0;
-    bool bAirDashUsed = false, bForcedDashCooldown = false, bWasDashing = false, bWasOnGround = true;
+    int32 BaseMaxCount = 2, WrittenMaxCount = INDEX_NONE;
+    bool bWasDashing = false, bWasOnGround = true;
+public:
+    /** True once a normal dash was used in the current air time. */
+    bool bAirDashUsed = false;
+    bool IsOnGround() const;
+private:
     float LastDashStart = -100.f;
 
     bool bDefaultOrientToMovement = true;
@@ -97,4 +103,8 @@ public:
     /** Ends the hero's current parry window (one press = one parried hit) and turns the hero (not the camera) toward From. */
     UFUNCTION(BlueprintCallable, Category="Parry")
     static void ConsumeParry(ACharacter* InHero, AActor* From);
+
+    /** False while the hero is in the air and already used its one air dash. */
+    UFUNCTION(BlueprintPure, Category="Parry")
+    static bool AirDashAllowed(ACharacter* InHero);
 };
