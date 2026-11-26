@@ -17,8 +17,9 @@ public:
     UPROPERTY(Transient) bool bSnapNextClip = false;
     /** Degrees both upper arms are rotated away from the body (0 = off). */
     UPROPERTY(Transient) float ArmSpread = 0.f;
-    /** Close the right hand around a held sword (Mixamo finger bones). */
-    UPROPERTY(Transient) bool bGripRightHand = false;
+    /** Right-hand finger pose (all bones below the hand) is taken from this clip at GripPoseTime; null = off. */
+    UPROPERTY(Transient) TObjectPtr<UAnimSequence> GripPoseClip;
+    UPROPERTY(Transient) float GripPoseTime = 0.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat test") FVector GuardDirection = FVector(-.65,.35,.7);
     /** When true, upper arms are rotated down so they never point higher than ArmMaxElevation (degrees, negative = below horizontal). */
     UPROPERTY(Transient) bool bLimitArms = false;

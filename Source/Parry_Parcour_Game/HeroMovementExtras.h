@@ -36,6 +36,10 @@ public:
     /** -1 left, +1 right. */
     UPROPERTY(BlueprintReadOnly, Category="Turn") float TurnDir = 0.f;
 
+    /** Test input set by the Parry.SimMove console command. */
+    FVector SimMoveDir = FVector::ZeroVector;
+    float SimMoveUntil = -1.f;
+
     // --- Air rules ---
     /** Must match the hero's dash cooldown; used when the air-dash lock is released on landing. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Air") float DashCooldownTime = .75f;
@@ -100,6 +104,7 @@ private:
     float LastDashStart = -100.f;
 
     bool bDefaultOrientToMovement = true;
+    bool bDefaultControllerRotation = false;
     bool bHaveDefaults = false;
     FVector LedgeNormal = FVector::ZeroVector;
     float LedgeTopZ = 0.f;

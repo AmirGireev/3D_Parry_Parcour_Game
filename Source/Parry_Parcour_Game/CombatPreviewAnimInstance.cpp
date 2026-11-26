@@ -3,6 +3,7 @@
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "Animation/AnimSequence.h"
 #include "AnimationRuntime.h"
+#include "Animation/AttributesRuntime.h"
 
 struct FCombatPreviewNode : FAnimNode_Base
 {
@@ -14,43 +15,27 @@ struct FCombatPreviewNode : FAnimNode_Base
     bool LimitArms=false;
     bool SnapNext=false; // next clip switch happens without crossfade
     float ArmSpread=0.f, ArmSpreadNow=0.f;
-    bool GripRight=false;
-    // Closes the right hand into a fist around the sword grip: each finger joint bends toward the thumb.
+    // Right-hand grip: the finger bones (everything below the right hand) are copied from a reference clip
+    // frame where the hand holds the sword, so the fist looks like in the original animation.
+    UAnimSequence* GripClip=nullptr;
+    float GripTime=0.f;
     void GripRightHand(FPoseContext& Out)
     {
-        if (!GripRight) return;
+        if (!GripClip) return;
         const FBoneContainer& Bones=Out.Pose.GetBoneContainer();
-        const FReferenceSkeleton& Ref=Bones.GetReferenceSkeleton();
-        auto Idx=[&](const TCHAR* N){ const int32 R=Ref.FindBoneIndex(FName(N)); return R==INDEX_NONE ? FCompactPoseBoneIndex(INDEX_NONE) : Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(R)); };
-        const FCompactPoseBoneIndex Thumb=Idx(TEXT("RightHandThumb2"));
-        if (Thumb.GetInt()==INDEX_NONE) return;
-        FCSPose<FCompactPose> CS;
-        CS.InitPose(Out.Pose);
-        const FVector ThumbPos=CS.GetComponentSpaceTransform(Thumb).GetLocation();
-        static const float Curl[3]={60.f, 80.f, 55.f};
-        for (const TCHAR* Finger : {TEXT("RightHandIndex"), TEXT("RightHandMiddle"), TEXT("RightHandRing"), TEXT("RightHandPinky")})
-        {
-            for (int32 J=1; J<=3; ++J)
-            {
-                const FCompactPoseBoneIndex B=Idx(*FString::Printf(TEXT("%s%d"), Finger, J));
-                const FCompactPoseBoneIndex N=Idx(*FString::Printf(TEXT("%s%d"), Finger, J+1));
-                if (B.GetInt()==INDEX_NONE || N.GetInt()==INDEX_NONE) break;
-                // Bend axis from the original pose: perpendicular to the finger, turning it toward the thumb.
-                const FTransform BCS=CS.GetComponentSpaceTransform(B);
-                const FVector F=(CS.GetComponentSpaceTransform(N).GetLocation()-BCS.GetLocation()).GetSafeNormal();
-                FVector T=ThumbPos-BCS.GetLocation();
-                T=(T-F*FVector::DotProduct(T,F)).GetSafeNormal();
-                FVector Axis=FVector::CrossProduct(F,T);
-                if (!Axis.Normalize()) continue;
-                // Apply in the joint's own frame so the rest of the finger follows.
-                const FVector LocalAxis=BCS.GetRotation().Inverse().RotateVector(Axis);
-                FTransform L=Out.Pose[B];
-                L.SetRotation(L.GetRotation()*FQuat(LocalAxis, FMath::DegreesToRadians(Curl[J-1])));
-                Out.Pose[B]=L;
-            }
-        }
-    }
-    // Rotates both upper arms away from the body (sideways) by ArmSpreadNow degrees.
+        int32 HandRef=Bones.GetReferenceSkeleton().FindBoneIndex(TEXT("RightHand"));
+        if (HandRef==INDEX_NONE) HandRef=Bones.GetReferenceSkeleton().FindBoneIndex(TEXT("hand_r"));
+        if (HandRef==INDEX_NONE) return;
+        const FCompactPoseBoneIndex Hand=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(HandRef));
+        if (Hand.GetInt()==INDEX_NONE) return;
+        FPoseContext Ref(Out);
+        FBlendedCurve Curve; Curve.InitFrom(Out.Curve);
+        UE::Anim::FStackAttributeContainer Attr;
+        FAnimationPoseData Data(Ref.Pose, Curve, Attr);
+        GripClip->GetAnimationPose(Data, FAnimExtractContext(double(GripTime), false));
+        for (FCompactPoseBoneIndex I : Out.Pose.ForEachBoneIndex())
+            if (Bones.BoneIsChildOf(I, Hand)) Out.Pose[I]=Ref.Pose[I];
+    }    // Rotates both upper arms away from the body (sideways) by ArmSpreadNow degrees.
     void SpreadArms(FPoseContext& Out)
     {
         if (ArmSpreadNow <= .01f) return;
@@ -242,7 +227,8 @@ struct FCombatPreviewProxy : FAnimInstanceProxy
         Node.Loop = Anim->bLoop;
         Node.SnapNext = Anim->bSnapNextClip;
         Node.ArmSpread = Anim->ArmSpread;
-        Node.GripRight = Anim->bGripRightHand;
+        Node.GripClip = Anim->GripPoseClip;
+        Node.GripTime = Anim->GripPoseTime;
         Node.GuardDirection=Anim->GuardDirection;
         Node.LimitArms=Anim->bLimitArms;
         Node.ArmMaxElevation=Anim->ArmMaxElevation;

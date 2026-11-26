@@ -40,7 +40,9 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     Clock += DeltaSeconds;
     bSnapNextClip = false;
     // The hero always holds the katana in the right hand.
-    bGripRightHand = true;
+    // Fist from the sprint (dash) clip, where the hand already holds the weapon.
+    GripPoseClip = Clips.IsValidIndex(Dash) ? Clips[Dash] : nullptr;
+    GripPoseTime = 0.f;
 
     const UCharacterMovementComponent* Move = Hero->GetCharacterMovement();
     const bool bFalling = Move && Move->IsFalling();
@@ -184,7 +186,7 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     bWasFalling = bFalling;
 
     // Keep the arms below shoulder height in the normal jump only.
-    bLimitArms = bFalling && !bFlipping && !bDashing;
+    bLimitArms = false;
     // Standing / turning: push the arms a little away from the body so the hands don't sink into the hips.
     ArmSpread = (!bFalling && !bDashing && Speed < RunSpeed && (Clip == Clips[Idle] || Clip == Clips[TurnL] || Clip == Clips[TurnR])) ? IdleArmSpread : 0.f;
 

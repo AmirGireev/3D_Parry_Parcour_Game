@@ -35,7 +35,7 @@ public:
     /** A turn only starts if the hero was standing within this time (s). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnStartWindow = .2f;
     /** Degrees the upper arms are pushed away from the body while standing (hands out of the hips). */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float IdleArmSpread = 12.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float IdleArmSpread = 17.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnRate = 1.5f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float StrafeWalkRate = 1.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float StrafeRunRate = 1.f;

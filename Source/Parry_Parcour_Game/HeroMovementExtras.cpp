@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/UnrealType.h"
+#include "UObject/UObjectIterator.h"
+#include "HAL/IConsoleManager.h"
 
 UHeroMovementExtras::UHeroMovementExtras()
 {
@@ -29,6 +31,7 @@ void UHeroMovementExtras::BeginPlay()
             // Read jump/move input before the movement component consumes it.
             Move->AddTickPrerequisiteComponent(this);
             bDefaultOrientToMovement = Move->bOrientRotationToMovement;
+            bDefaultControllerRotation = Move->bUseControllerDesiredRotation;
             bHaveDefaults = true;
         }
 }
@@ -39,6 +42,8 @@ void UHeroMovementExtras::TickComponent(float DeltaTime, ELevelTick TickType, FA
     ACharacter* H = Hero();
     if (!H) return;
     StateTime += DeltaTime;
+    // Test input from the Parry.SimMove console command (lets automated tests "tap" a direction).
+    if (GetWorld()->GetTimeSeconds() < SimMoveUntil) H->AddMovementInput(SimMoveDir, 1.f);
     switch (LedgeState)
     {
     case EHeroLedgeState::None: TryGrab(); break;
@@ -50,6 +55,22 @@ void UHeroMovementExtras::TickComponent(float DeltaTime, ELevelTick TickType, FA
     UpdateTurnInPlace(DeltaTime);
     UpdateAirRules();
 }
+
+// Parry.SimMove <X> <Y> <Seconds>: pushes movement input (world direction) on every playing hero for a while.
+static void SimMove(const TArray<FString>& Args, UWorld* World)
+{
+    if (Args.Num() < 3) return;
+    const FVector Dir(FCString::Atof(*Args[0]), FCString::Atof(*Args[1]), 0.f);
+    for (TObjectIterator<UHeroMovementExtras> It; It; ++It)
+    {
+        UWorld* W = It->GetWorld();
+        if (!W || !W->IsGameWorld()) continue;
+        It->SimMoveDir = Dir.GetSafeNormal();
+        It->SimMoveUntil = W->GetTimeSeconds() + FCString::Atof(*Args[2]);
+        UE_LOG(LogTemp, Display, TEXT("ParrySim move %s dir=%s until=%.2f (now %.2f)"), *It->GetPathName(), *It->SimMoveDir.ToString(), It->SimMoveUntil, W->GetTimeSeconds());
+    }
+}
+static FAutoConsoleCommandWithWorldAndArgs SimMoveCmd(TEXT("Parry.SimMove"), TEXT("Test: push movement input X Y for Seconds."), FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&SimMove));
 
 // ---------------------------------------------------------------- turn in place
 void UHeroMovementExtras::UpdateTurnInPlace(float Dt)
@@ -84,11 +105,13 @@ void UHeroMovementExtras::UpdateTurnInPlace(float Dt)
     if (bDone)
     {
         bTurningInPlace = false;
-        if (bHaveDefaults && !bStrafing) Move->bOrientRotationToMovement = bDefaultOrientToMovement;
+        if (bHaveDefaults && !bStrafing) { Move->bOrientRotationToMovement = bDefaultOrientToMovement; Move->bUseControllerDesiredRotation = bDefaultControllerRotation; }
         return;
     }
     // Rotate at the turn-clip pace instead of snapping round, so the clip and the body turn together.
+    // Neither the run direction nor the camera may turn the hero while the turn plays.
     Move->bOrientRotationToMovement = false;
+    Move->bUseControllerDesiredRotation = false;
     const float Step = FMath::Clamp(Left, -TurnDegPerSec * Dt, TurnDegPerSec * Dt);
     H->SetActorRotation(FRotator(0.f, H->GetActorRotation().Yaw + Step, 0.f));
 }
@@ -157,7 +180,12 @@ void UHeroMovementExtras::UpdateLockOn(float Dt)
         break;
     }
     bStrafing = bLocked && IsValid(Target) && !IsOnLedge() && !ReadBool(TEXT("bIsDashing"));
-    if (Move && bHaveDefaults) Move->bOrientRotationToMovement = bStrafing ? false : bDefaultOrientToMovement;
+    if (Move && bHaveDefaults)
+    {
+        // While strafing the hero faces the target; the camera direction must not pull it round either.
+        Move->bOrientRotationToMovement = bStrafing ? false : bDefaultOrientToMovement;
+        Move->bUseControllerDesiredRotation = bStrafing ? false : bDefaultControllerRotation;
+    }
     if (bStrafing)
     {
         FVector To = Target->GetActorLocation() - H->GetActorLocation();
