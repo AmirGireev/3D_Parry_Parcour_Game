@@ -185,10 +185,11 @@ void UMainHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     }
     bWasFalling = bFalling;
 
-    // Keep the arms below shoulder height in the normal jump only.
-    bLimitArms = bFalling;
-    // Arms while falling: this many degrees lower than in the clip.
-    ArmDrop = FallArmDrop;
+    // Keep the arms below shoulder height during falling.
+    // Arms sink smoothly into the fall pose (and come back up smoothly after landing).
+    const float WantDrop = (bFalling && Clip == Clips[Fall]) ? FallArmDrop : 0.f;
+    ArmDrop = FMath::FInterpTo(ArmDrop, WantDrop, DeltaSeconds, 3.f);
+    bLimitArms = ArmDrop > 0.5f;
     // Standing / turning: push the arms a little away from the body so the hands don't sink into the hips.
     ArmSpread = (!bFalling && !bDashing && Speed < RunSpeed && (Clip == Clips[Idle] || Clip == Clips[TurnL] || Clip == Clips[TurnR])) ? IdleArmSpread : 0.f;
 

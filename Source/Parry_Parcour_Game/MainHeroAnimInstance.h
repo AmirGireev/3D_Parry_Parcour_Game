@@ -36,7 +36,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnStartWindow = .2f;
     /** Degrees the upper arms are pushed away from the body while standing (hands out of the hips). */
     /** Arms while falling are lowered this many degrees more than in the fall clip. */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float FallArmDrop = 30.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float FallArmDrop = 40.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float IdleArmSpread = 17.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float TurnRate = 1.5f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Main hero") float StrafeWalkRate = 1.f;
